@@ -1,39 +1,24 @@
-server:
-  port: 8080
-  path: /travalbot
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/ai_tour_guide
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false
-    open-in-view: false
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+  server:
+    port: 8080
+    servlet:
+      context-path: /travelbot
 
-app:
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION}
-    refresh-expiration: ${JWT_REFRESH_EXPIRATION}
-  chatbot:
-    api-key: ${CHATBOT_API_KEY}
-    api-url: ${CHATBOT_API_URL}
+  spring:
+    profiles:
+      active: secret
 
-logging:
-  level:
-    com.tourism: INFO
+    datasource:
+      url: jdbc:mysql://localhost:3306/ai_tour_guide
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+    jpa:
+      hibernate:
+        ddl-auto: none
+      show-sql: false
+      open-in-view: false
+
+  logging:
+    level:
+      com.tourism: INFO
+

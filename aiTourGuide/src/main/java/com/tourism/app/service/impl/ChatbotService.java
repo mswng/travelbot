@@ -8,10 +8,14 @@ import com.tourism.app.repository.ChatMessageRepository;
 import com.tourism.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -22,53 +26,79 @@ public class ChatbotService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
-    // TODO: Inject AI client của cậu ở đây
-    // @Value("${app.chatbot.api-key}") private String apiKey;
-    // @Value("${app.chatbot.api-url}") private String apiUrl;
+    // URL của FastAPI chatbot service
+    private static final String CHATBOT_SERVICE_URL = "http://localhost:8001";
+
+    private final WebClient webClient = WebClient.builder()
+            .baseUrl(CHATBOT_SERVICE_URL)
+            .build();
 
     @Transactional
     public ChatResponse chat(ChatRequest request, String userEmail) {
-        // Tạo session mới nếu chưa có
         String sessionId = (request.getSessionId() != null && !request.getSessionId().isBlank())
                 ? request.getSessionId()
                 : UUID.randomUUID().toString();
 
-        // Lấy user nếu đã đăng nhập
         User user = null;
         if (userEmail != null) {
             user = userRepository.findByEmail(userEmail).orElse(null);
         }
 
-        // Lưu message của user
-        ChatMessage userMessage = ChatMessage.builder()
-                .user(user)
-                .sessionId(sessionId)
+        // Lưu message user
+        chatMessageRepository.save(ChatMessage.builder()
+                .user(user).sessionId(sessionId)
                 .role(ChatMessage.MessageRole.USER)
                 .content(request.getMessage())
-                .build();
-        chatMessageRepository.save(userMessage);
+                .build());
 
-        // Lấy lịch sử chat cho context
-        List<ChatMessage> history = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+        // Lấy lịch sử để gửi sang FastAPI
+        List<ChatMessage> history = chatMessageRepository
+                .findBySessionIdOrderByCreatedAtAsc(sessionId);
 
-        // ================================================================
-        // TODO: Gọi AI model của cậu ở đây
-        // String aiReply = callYourAIModel(request.getMessage(), history);
-        // ================================================================
-        String aiReply = buildPlaceholderResponse(request.getMessage());
+        List<Map<String, String>> historyPayload = history.stream()
+                .filter(m -> !m.getContent().equals(request.getMessage()))
+                .map(m -> Map.of(
+                        "role", m.getRole().name().toLowerCase(),
+                        "content", m.getContent()
+                ))
+                .toList();
+
+        // Gọi FastAPI chatbot service
+        String botReply;
+        try {
+            Map<String, Object> payload = Map.of(
+                    "message", request.getMessage(),
+                    "history", historyPayload,
+                    "session_id", sessionId
+            );
+
+            Map response = webClient.post()
+                    .uri("/chat")
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            botReply = response != null ? (String) response.get("answer") : "Xin lỗi, có lỗi xảy ra.";
+
+        } catch (WebClientResponseException e) {
+            log.error("Chatbot service error: {}", e.getMessage());
+            botReply = "Chatbot service đang không khả dụng, vui lòng thử lại sau.";
+        } catch (Exception e) {
+            log.error("Unexpected error calling chatbot: {}", e.getMessage());
+            botReply = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn.";
+        }
 
         // Lưu response của bot
-        ChatMessage botMessage = ChatMessage.builder()
-                .user(user)
-                .sessionId(sessionId)
+        chatMessageRepository.save(ChatMessage.builder()
+                .user(user).sessionId(sessionId)
                 .role(ChatMessage.MessageRole.ASSISTANT)
-                .content(aiReply)
-                .build();
-        chatMessageRepository.save(botMessage);
+                .content(botReply)
+                .build());
 
         return ChatResponse.builder()
                 .sessionId(sessionId)
-                .message(aiReply)
+                .message(botReply)
                 .role("ASSISTANT")
                 .build();
     }
@@ -80,20 +110,5 @@ public class ChatbotService {
     @Transactional
     public void clearSession(String sessionId) {
         chatMessageRepository.deleteBySessionId(sessionId);
-    }
-
-    // ================================================================
-    // TODO: Cậu thay thế method này bằng logic gọi AI thật
-    // Ví dụ: Gemini, OpenAI, Ollama...
-    //
-    // private String callYourAIModel(String message, List<ChatMessage> history) {
-    //     // Build prompt với history
-    //     // Gọi API
-    //     // Return response
-    // }
-    // ================================================================
-    private String buildPlaceholderResponse(String message) {
-        return "[AI Placeholder] Bạn hỏi: \"" + message + "\". " +
-               "Vui lòng tích hợp AI model thực tế vào ChatbotService.callYourAIModel()";
     }
 }
