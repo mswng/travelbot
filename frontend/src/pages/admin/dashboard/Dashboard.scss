@@ -1,0 +1,52 @@
+.dashboard-page {
+    width: 100%;
+}
+
+/* TOP */
+
+.dashboard-top {
+    margin-bottom: 25px;
+
+    h1 {
+        font-size: 42px;
+
+        margin-bottom: 10px;
+
+        color: #111827;
+    }
+
+    p {
+        color: #6b7280;
+
+        line-height: 28px;
+    }
+}
+
+/* STATS */
+
+.stats-cards {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(260px, 1fr));
+
+    gap: 24px;
+
+    margin-bottom: 34px;
+}
+
+/* SECTION */
+
+.dashboard-section {
+    margin-bottom: 34px;
+}
+
+.section-header {
+    margin-bottom: 18px;
+
+    h2 {
+        font-size: 24px;
+
+        color: #111827;
+    }
+}

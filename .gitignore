@@ -1,0 +1,24 @@
+# node
+node_modules/
+dist/
+build/
+
+# python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# vscode
+.vscode/
+
+# logs
+*.log
+
+# data lớn
+data/*.csv
+data/*.json
+
+# system
+.DS_Store
+Thumbs.db

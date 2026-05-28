@@ -1,0 +1,40 @@
+.user-page {
+    padding: 20px;
+}
+
+.user-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+
+    h1 {
+        font-size: 38px;
+        margin-bottom: 8px;
+    }
+
+    p {
+        color: #6b7280;
+    }
+}
+
+.add-btn {
+    height: 54px;
+
+    padding: 0 22px;
+
+    border: none;
+    border-radius: 16px;
+
+    background: #16a34a;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}

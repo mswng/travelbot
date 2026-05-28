@@ -1,0 +1,56 @@
+.stats-card {
+    background: white;
+
+    border-radius: 28px;
+
+    padding: 28px;
+
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.05);
+
+    transition: 0.25s ease;
+
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-4px);
+
+        box-shadow:
+            0 16px 34px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+        font-size: 34px;
+
+        margin-bottom: 6px;
+
+        color: #111827;
+    }
+
+    p {
+        color: #6b7280;
+
+        font-size: 15px;
+    }
+}
+
+/* ICON */
+
+.stats-icon {
+    width: 74px;
+    height: 74px;
+
+    border-radius: 22px;
+
+    background: #dcfce7;
+
+    color: #16a34a;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

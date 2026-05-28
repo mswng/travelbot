@@ -1,0 +1,95 @@
+.chat-sidebar {
+    width: 290px;
+
+    background: white;
+
+    border-right: 1px solid #e5e7eb;
+
+    padding: 24px 18px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.new-chat-btn {
+    width: 100%;
+    height: 52px;
+
+    border: none;
+    border-radius: 18px;
+
+    background: #00aa6c;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    margin-bottom: 32px;
+
+    transition: 0.25s ease;
+
+    &:hover {
+        background: #01915d;
+    }
+}
+
+.sidebar-section,
+.history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-title {
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #9ca3af;
+
+    text-transform: uppercase;
+
+    margin-bottom: 8px;
+}
+
+.sidebar-section button,
+.history-section button {
+    height: 48px;
+
+    border: none;
+    border-radius: 14px;
+
+    background: transparent;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 0 16px;
+
+    font-size: 15px;
+    font-weight: 500;
+
+    color: #111827;
+
+    cursor: pointer;
+
+    transition: 0.25s ease;
+
+    &:hover {
+        background: #f3f4f6;
+    }
+}
+
+@media (max-width: 992px) {
+    .chat-sidebar {
+        display: none;
+    }
+}

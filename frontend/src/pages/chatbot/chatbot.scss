@@ -1,0 +1,44 @@
+.chatbot-page {
+    width: 100%;
+    height: calc(100vh - 90px);
+
+    display: flex;
+
+    overflow: hidden;
+
+    background: #f8fafc;
+}
+
+.chatbot-main {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    min-height: 0;
+}
+
+.chat-messages {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 40px 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+
+    scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 999px;
+}

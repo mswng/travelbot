@@ -1,0 +1,24 @@
+.recommend-page {
+    padding: 40px 6%;
+
+    background: #f8fafc;
+
+    min-height: 100vh;
+
+    h1 {
+        font-size: 42px;
+
+        margin-bottom: 32px;
+
+        color: #111827;
+    }
+}
+
+.recommend-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(320px, 1fr));
+
+    gap: 28px;
+}

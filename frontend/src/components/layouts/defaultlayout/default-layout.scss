@@ -1,0 +1,9 @@
+.default-layout {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.layout-content {
+    width: 100%;
+    min-height: calc(100vh - 160px); /* Adjust based on header and footer heights */
+}

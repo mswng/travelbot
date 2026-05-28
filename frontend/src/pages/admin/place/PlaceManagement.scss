@@ -1,0 +1,50 @@
+h1 {
+    font-size: 38px;
+    font-weight: 900;
+
+    margin-bottom: 8px;
+}
+p {
+    font-size: 16px;
+    color: #535762;
+}
+
+.place-page {
+    padding: 20px;
+}
+
+.place-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+}
+
+.place-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(320px, 1fr));
+
+    gap: 24px;
+}
+
+.add-place-btn {
+    height: 52px;
+
+    padding: 0 22px;
+
+    border: none;
+    border-radius: 16px;
+
+    background: #16a34a;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    cursor: pointer;
+}

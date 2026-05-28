@@ -1,0 +1,50 @@
+.chat-header {
+    height: 82px;
+
+    background: rgba(255,255,255,0.85);
+
+    backdrop-filter: blur(12px);
+
+    border-bottom: 1px solid #e5e7eb;
+
+    padding: 0 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    h3 {
+        font-size: 18px;
+        margin-bottom: 2px;
+    }
+
+    p {
+        color: #6b7280;
+        font-size: 14px;
+    }
+}
+
+.bot-avatar {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #00aa6c,
+        #0ea5e9
+    );
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

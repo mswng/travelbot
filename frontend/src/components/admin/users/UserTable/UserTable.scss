@@ -1,0 +1,141 @@
+.user-table-card {
+    background: white;
+
+    border-radius: 30px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.05);
+
+    overflow-x: auto;
+}
+
+/* TABLE */
+
+.user-table-card table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+/* HEAD */
+
+.user-table-card th {
+    padding-bottom: 20px;
+
+    text-align: left;
+
+    color: #6b7280;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* BODY */
+
+.user-table-card td {
+    padding: 22px 0;
+
+    border-bottom: 1px solid #f8fafc;
+
+    color: #111827;
+
+    font-size: 15px;
+}
+
+/* HOVER */
+
+.user-table-card tbody tr {
+    transition: 0.2s ease;
+}
+
+.user-table-card tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* ROLE */
+
+.role {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 16px;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.role.admin {
+    background: #dcfce7;
+
+    color: #166534;
+}
+
+.role.user {
+    background: #dbeafe;
+
+    color: #1d4ed8;
+}
+
+/* ACTIONS */
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.actions button {
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 14px;
+
+    background: #f3f4f6;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.actions button:hover {
+    transform: translateY(-2px);
+
+    background: #e5e7eb;
+}
+
+/* DELETE */
+
+.delete {
+    background: #fee2e2 !important;
+
+    color: #dc2626;
+}
+
+.delete:hover {
+    background: #fecaca !important;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+
+    .user-table-card {
+        padding: 20px;
+    }
+
+    .user-table-card table {
+        min-width: 700px;
+    }
+}
