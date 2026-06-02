@@ -1,9 +1,79 @@
 import "./Login.scss";
-import { useNavigate } from "react-router-dom";
-import { FcGoogle } from "react-icons/fc";
+
+import {
+    useNavigate,
+} from "react-router-dom";
+
+import {
+    useState,
+} from "react";
+
+import {
+    GoogleLogin,
+} from "@react-oauth/google";
+
+import {
+    googleLogin,
+    saveAuth,
+} from "~/services/authService";
 
 export default function Login() {
-    const navigate = useNavigate();
+
+    const navigate =
+        useNavigate();
+
+    const [loading, setLoading] =
+        useState(false);
+
+    /* GOOGLE LOGIN */
+
+    const handleGoogleSuccess =
+    async (credentialResponse) => {
+
+        try {
+
+            setLoading(true);
+
+            console.log(
+                credentialResponse
+            );
+
+            /* CALL BACKEND */
+
+            const data =
+                await googleLogin(
+
+                    credentialResponse.credential
+                );
+
+            console.log(data);
+
+            /* SAVE */
+
+            saveAuth(
+
+                data.token,
+
+                data.user
+            );
+
+            /* REDIRECT */
+
+            navigate("/");
+
+        } catch (err) {
+
+            console.log(err);
+
+            alert(
+                "Đăng nhập thất bại"
+            );
+
+        } finally {
+
+            setLoading(false);
+        }
+    };
 
     return (
 
@@ -29,19 +99,44 @@ export default function Login() {
 
                     <p className="subtitle">
 
-                        Đăng nhập để khám phá những trải nghiệm du lịch tuyệt vời.
+                        Đăng nhập để khám phá
+                        những trải nghiệm du lịch tuyệt vời.
 
                     </p>
 
-                    {/* GOOGLE BTN */}
+                    {/* GOOGLE LOGIN */}
 
-                    <button className="login-btn">
+                    <div className="google-login-wrapper">
 
-                        <FcGoogle size={26} />
+                        {loading ? (
 
-                        Đăng nhập với Google
+                            <button
+                                className="login-btn"
+                                disabled
+                            >
 
-                    </button>
+                                Đang đăng nhập...
+
+                            </button>
+
+                        ) : (
+
+                            <GoogleLogin
+
+                                onSuccess={
+                                    handleGoogleSuccess
+                                }
+
+                                onError={() => {
+
+                                    alert(
+                                        "Google Login Failed"
+                                    );
+                                }}
+                            />
+                        )}
+
+                    </div>
 
                     {/* DIVIDER */}
 
@@ -57,7 +152,10 @@ export default function Login() {
 
                     <button
                         className="guest-btn"
-                        onClick={() => navigate("/")}
+                        onClick={() =>
+
+                            navigate("/")
+                        }
                     >
 
                         Tiếp tục với tư cách khách
@@ -68,7 +166,18 @@ export default function Login() {
 
                     <p className="footer-text">
 
-                        Bằng việc đăng nhập, bạn đồng ý với chúng tôi về <span>Điều khoản dịch vụ</span> và <span>Chính sách bảo mật</span>
+                        Bằng việc đăng nhập,
+                        bạn đồng ý với chúng tôi về
+
+                        <span>
+                            Điều khoản dịch vụ
+                        </span>
+
+                        và
+
+                        <span>
+                            Chính sách bảo mật
+                        </span>
 
                     </p>
 

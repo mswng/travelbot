@@ -26,7 +26,7 @@ thử từ khóa khác hoặc tìm trên Google Maps.
 
 Định dạng câu trả lời:
 - Trả lời ngắn gọn, rõ ràng
-- Nếu gợi ý địa điểm, liệt kê tên + địa chỉ + rating (nếu có)
+- Nếu gợi ý địa điểm, liệt kê tên + địa chỉ
 - Không bịa đặt thông tin"""
 
 
@@ -81,7 +81,6 @@ def _format_places_context(places: List[Dict]) -> str:
         name = p.get("name", "")
         city = p.get("city", "")
         address = p.get("address", "")
-        rating = p.get("rating", "")
         price = p.get("price_range", "")
         phone = p.get("phone", "")
         ptype = p.get("place_type", "")
@@ -90,7 +89,6 @@ def _format_places_context(places: List[Dict]) -> str:
         if ptype: line += f" ({ptype})"
         if city: line += f" - {city}"
         if address: line += f"\n   📍 {address}"
-        if rating: line += f"\n   ⭐ {rating}/5"
         if price: line += f" | 💰 {price}"
         if phone: line += f"\n   📞 {phone}"
 

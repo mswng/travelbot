@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {
+    useState,
+} from "react";
+
+import {
+    useNavigate,
+} from "react-router-dom";
 
 import "./adminLogin.scss";
 
@@ -10,9 +15,15 @@ import {
     FaEyeSlash,
 } from "react-icons/fa";
 
+import {
+    adminLogin,
+    saveAuth,
+} from "~/services/authService";
+
 const AdminLogin = () => {
 
-    const navigate = useNavigate();
+    const navigate =
+        useNavigate();
 
     const [showPassword, setShowPassword] =
         useState(false);
@@ -20,11 +31,17 @@ const AdminLogin = () => {
     const [loading, setLoading] =
         useState(false);
 
-    const [form, setForm] = useState({
-        username: "",
-        password: "",
-        remember: false,
-    });
+    const [form, setForm] =
+        useState({
+
+            username: "",
+
+            password: "",
+
+            remember: false,
+        });
+
+    /* CHANGE */
 
     const handleChange = (e) => {
 
@@ -36,7 +53,9 @@ const AdminLogin = () => {
         } = e.target;
 
         setForm({
+
             ...form,
+
             [name]:
                 type === "checkbox"
                     ? checked
@@ -44,7 +63,10 @@ const AdminLogin = () => {
         });
     };
 
-    const handleLogin = async (e) => {
+    /* LOGIN */
+
+    const handleLogin =
+    async (e) => {
 
         e.preventDefault();
 
@@ -52,32 +74,65 @@ const AdminLogin = () => {
             !form.username ||
             !form.password
         ) {
-            return alert(
+
+            alert(
                 "Nhập đầy đủ thông tin!"
             );
+
+            return;
         }
 
         try {
 
             setLoading(true);
 
-            // fake loading
-            await new Promise((resolve) =>
-                setTimeout(resolve, 1500)
+            /* CALL API */
+
+            const data =
+                await adminLogin(
+
+                    form.username,
+
+                    form.password
+                );
+
+            console.log(data);
+
+            /* SAVE TOKEN */
+
+            saveAuth(
+
+                data.token,
+
+                data.user
             );
 
+            /* REMEMBER */
+
             if (form.remember) {
+
                 localStorage.setItem(
+
                     "rememberUser",
+
                     form.username
                 );
             }
+
+            /* REDIRECT */
 
             navigate("/admin");
 
         } catch (err) {
 
-            alert(err.message);
+            console.log(err);
+
+            alert(
+
+                err.response?.data?.message ||
+
+                "Đăng nhập thất bại"
+            );
 
         } finally {
 
@@ -86,6 +141,7 @@ const AdminLogin = () => {
     };
 
     return (
+
         <div className="admin-login-page">
 
             <div className="overlay" />
@@ -144,6 +200,7 @@ const AdminLogin = () => {
                             type="button"
                             className="eye-btn"
                             onClick={() =>
+
                                 setShowPassword(
                                     !showPassword
                                 )
@@ -151,7 +208,9 @@ const AdminLogin = () => {
                         >
 
                             {showPassword
+
                                 ? <FaEyeSlash />
+
                                 : <FaEye />
                             }
 
@@ -191,7 +250,9 @@ const AdminLogin = () => {
                     >
 
                         {loading
+
                             ? "Đang đăng nhập..."
+
                             : "Đăng nhập"
                         }
 

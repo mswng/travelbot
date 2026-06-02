@@ -23,12 +23,37 @@ public interface PlaceRepository extends JpaRepository<Place, Integer> {
                OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
         AND (:placeType IS NULL OR LOWER(p.placeType) LIKE LOWER(CONCAT('%', :placeType, '%')))
         AND (:city IS NULL OR LOWER(p.city) = LOWER(:city))
+        AND (:minRating IS NULL OR p.rating >= :minRating)
         """)
     Page<Place> searchPlaces(
-            @Param("keyword") String keyword,
+            @Param("keyword")   String keyword,
             @Param("placeType") String placeType,
-            @Param("city") String city,
+            @Param("city")      String city,
+            @Param("minRating") Double minRating,
             Pageable pageable
+    );
+
+    @Query(value = """
+        SELECT *, (
+            6371 * ACOS(
+                COS(RADIANS(:lat)) * COS(RADIANS(latitude))
+                * COS(RADIANS(longitude) - RADIANS(:lng))
+                + SIN(RADIANS(:lat)) * SIN(RADIANS(latitude))
+            )
+        ) AS distance_km
+        FROM places
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        AND (:placeType IS NULL OR LOWER(place_type) LIKE LOWER(CONCAT('%', :placeType, '%')))
+        HAVING distance_km <= :radiusKm
+        ORDER BY distance_km ASC
+        LIMIT :lim
+        """, nativeQuery = true)
+    List<Object[]> findNearbyRaw(
+            @Param("lat")       double lat,
+            @Param("lng")       double lng,
+            @Param("radiusKm")  double radiusKm,
+            @Param("placeType") String placeType,
+            @Param("lim")       int limit
     );
 
     @Query("SELECT DISTINCT p.city FROM TourismPlace p WHERE p.city IS NOT NULL ORDER BY p.city")

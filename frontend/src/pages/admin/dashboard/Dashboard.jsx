@@ -1,5 +1,10 @@
 import "./Dashboard.scss";
 
+import {
+    useEffect,
+    useState,
+} from "react";
+
 import StatsCard
 from "~/components/dashborad/StatsCard/StatsCard";
 
@@ -15,141 +20,184 @@ import {
     FileText,
 } from "lucide-react";
 
-/* STATS */
-
-const stats = [
-
-    {
-        title: "Người dùng",
-        value: "12,540",
-        icon: <Users size={28} />,
-    },
-
-    {
-        title: "Bài viết",
-        value: "1,245",
-        icon: <FileText size={28} />,
-    },
-
-    {
-        title: "Địa điểm du lịch",
-        value: "328",
-        icon: <MapPinned size={28} />,
-    },
-];
-
-/* USERS */
-
-const users = [
-
-    {
-        id: 1,
-        name: "Nguyen Van A",
-        email: "admin@gmail.com",
-        role: "ADMIN",
-    },
-
-    {
-        id: 2,
-        name: "Tran Thi B",
-        email: "user@gmail.com",
-        role: "USER",
-    },
-];
-
-/* POSTS */
-
-const posts = [
-
-    {
-        id: 1,
-        title: "Discover Bali",
-        location: "Indonesia",
-        status: "Published",
-    },
-
-    {
-        id: 2,
-        title: "Da Lat Adventure",
-        location: "Vietnam",
-        status: "Draft",
-    },
-];
+import {
+    getDashboard,
+} from "~/services/adminService";
 
 function Dashboard() {
 
-    return (
+    /* STATE */
 
-            <div className="dashboard-page">
+    const [dashboardData, setDashboardData] =
+        useState(null);
 
-                {/* HEADER */}
+    const [loading, setLoading] =
+        useState(true);
 
-                <div className="dashboard-top">
+    /* FETCH */
 
-                    <h1>
-                        Trang quản trị
-                    </h1>
+    useEffect(() => {
 
-                    <p>
-                        Chào mừng đến với trang quản trị của TravelBot! 
-                        <br/>
-                        Tại đây, bạn có thể theo dõi và quản lý tất cả các hoạt động trên nền tảng của chúng tôi.
-                        <br/>
-                        Dưới đây là tổng quan về số liệu thống kê, người dùng và bài viết gần đây nhất.
-                    </p>
+        fetchDashboard();
 
-                </div>
+    }, []);
 
-                {/* STATS */}
+    const fetchDashboard = async () => {
 
-                <div className="stats-cards">
+        try {
 
-                    {stats.map((item, index) => (
+            setLoading(true);
 
-                        <StatsCard
-                            key={index}
-                            icon={item.icon}
-                            title={item.title}
-                            value={item.value}
-                        />
+            const data =
+                await getDashboard();
 
-                    ))}
+            console.log(data);
 
-                </div>
+            setDashboardData(data);
 
-                {/* USERS */}
+        } catch (err) {
 
-                <div className="dashboard-section">
+            console.log(err);
 
-                    <div className="section-header">
+        } finally {
 
-                        <h2>
-                            Người dùng gần đây
-                        </h2>
+            setLoading(false);
+        }
+    };
 
-                    </div>
+    /* LOADING */
 
-                    <UserTable users={users} />
+    if (loading) {
 
-                </div>
+        return (
 
-                {/* POSTS */}
+            <div className="dashboard-loading">
 
-                <div className="dashboard-section">
-
-                    <div className="section-header">
-
-                        <h2>
-                            Bài viết gần đây
-                        </h2>
-
-                    </div>
-
-                    <PostTable posts={posts} />
-
-                </div>
+                Loading dashboard...
 
             </div>
+        );
+    }
+
+    /* STATS */
+
+    const stats = [
+
+        {
+            title: "Người dùng",
+
+            value:
+                dashboardData?.totalUsers || 0,
+
+            icon:
+                <Users size={28} />,
+        },
+
+        {
+            title: "Bài viết",
+
+            value:
+                dashboardData?.totalPosts || 0,
+
+            icon:
+                <FileText size={28} />,
+        },
+
+        {
+            title: "Địa điểm du lịch",
+
+            value:
+                dashboardData?.totalPlaces || 0,
+
+            icon:
+                <MapPinned size={28} />,
+        },
+    ];
+
+    return (
+
+        <div className="dashboard-page">
+
+            {/* HEADER */}
+
+            <div className="dashboard-top">
+
+                <h1>
+                    Trang quản trị
+                </h1>
+
+                <p>
+                    Chào mừng đến với trang quản trị của TravelBot!
+                    <br />
+
+                    Tại đây, bạn có thể theo dõi và quản lý tất cả
+                    các hoạt động trên nền tảng của chúng tôi.
+                    <br />
+
+                    Dưới đây là tổng quan về số liệu thống kê,
+                    người dùng và bài viết gần đây nhất.
+                </p>
+
+            </div>
+
+            {/* STATS */}
+
+            <div className="stats-cards">
+
+                {stats.map((item, index) => (
+
+                    <StatsCard
+                        key={index}
+                        icon={item.icon}
+                        title={item.title}
+                        value={item.value}
+                    />
+
+                ))}
+
+            </div>
+
+            {/* RECENT USERS */}
+
+            <div className="dashboard-section">
+
+                <div className="section-header">
+
+                    <h2>
+                        Người dùng gần đây
+                    </h2>
+
+                </div>
+
+                <UserTable
+                    users={
+                        dashboardData?.recentUsers || []
+                    }
+                />
+
+            </div>
+
+            {/* RECENT POSTS */}
+
+            <div className="dashboard-section">
+
+                <div className="section-header">
+
+                    <h2>
+                        Bài viết gần đây
+                    </h2>
+
+                </div>
+
+                <PostTable
+                    posts={
+                        dashboardData?.recentPosts || []
+                    }
+                />
+
+            </div>
+
+        </div>
     );
 }
 

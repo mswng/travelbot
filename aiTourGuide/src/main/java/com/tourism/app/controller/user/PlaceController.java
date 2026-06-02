@@ -27,6 +27,7 @@ public class PlaceController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String placeType,
             @RequestParam(required = false) String city,
+            @RequestParam(required = false) Double minRating,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "rating") String sortBy,
@@ -37,7 +38,7 @@ public class PlaceController {
                 : Sort.by(sortBy).descending();
 
         return ResponseEntity.ok(ApiResponse.success(
-                placeService.searchPlaces(keyword, placeType, city, PageRequest.of(page, size, sort))
+                placeService.searchPlaces(keyword, placeType, city, minRating, PageRequest.of(page, size, sort))
         ));
     }
 

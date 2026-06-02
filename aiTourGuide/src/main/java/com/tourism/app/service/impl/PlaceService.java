@@ -27,8 +27,8 @@ public class PlaceService {
     // ============ PUBLIC ============
 
     public PageResponse<PlaceResponse> searchPlaces(
-            String keyword, String placeType, String city, Pageable pageable) {
-        Page<Place> page = placeRepository.searchPlaces(keyword, placeType, city, pageable);
+            String keyword, String placeType, String city, Double minRating, Pageable pageable) {
+        Page<Place> page = placeRepository.searchPlaces(keyword, placeType, city, minRating, pageable);
         return toPageResponse(page);
     }
 
