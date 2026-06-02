@@ -2,15 +2,8 @@ from sqlalchemy import create_engine, text
 from config import DATABASE_URL
 from typing import List, Dict
 
-# =========================
-# DATABASE ENGINE
-# =========================
 engine = create_engine(DATABASE_URL)
 
-
-# =========================
-# GET ALL PLACES
-# =========================
 def get_all_places() -> List[Dict]:
     """
     Lấy toàn bộ địa điểm từ MySQL
@@ -70,10 +63,6 @@ def get_all_places() -> List[Dict]:
         rows = conn.execute(query).mappings().all()
         return [dict(row) for row in rows]
 
-
-# =========================
-# SEARCH PLACE BY KEYWORD
-# =========================
 def search_places_by_keyword(
     keyword: str,
     city: str = None,

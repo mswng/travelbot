@@ -48,7 +48,7 @@ def test_keyword_search():
     print("="*50)
     results = search_places_by_keyword("cafe", limit=3)
     for r in results:
-        print(f"  → {r.get('name')} | {r.get('city')} | ⭐{r.get('rating')}")
+        print(f"  → {r.get('name')} | {r.get('city')}")
 
 
 def test_chat():

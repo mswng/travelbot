@@ -9,11 +9,12 @@ from config import PORT
 from vector_store import build_vector_store, semantic_search, get_index_stats
 from rag_engine import chat
 from database import search_places_by_keyword
+from itinerary_engine import generate_itinerary, index_itineraries
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Tourism Chatbot API", version="1.0.0")
+app = FastAPI(title="Tourism Chatbot API & Itinerary API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,6 +47,23 @@ class SearchRequest(BaseModel):
 
 class RebuildRequest(BaseModel):
     force: Optional[bool] = True
+
+class ItineraryGenerateRequest(BaseModel):
+    destination: str
+    duration_days: int
+    start_date: Optional[str] = ""
+    preferences: Optional[str] = ""
+    budget: Optional[str] = "trung bình"
+
+class ItineraryItem(BaseModel):
+    id: int
+    title: str
+    destination: str
+    summary: str
+    content: str
+
+class ItineraryIndexRequest(BaseModel):
+    itineraries: List[ItineraryItem]
 
 
 @app.on_event("startup")
@@ -108,6 +126,34 @@ def keyword_search_endpoint(request: SearchRequest):
         return {"results": results, "count": len(results)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/itinerary/generate")
+def itinerary_generate(request: ItineraryGenerateRequest):
+    """
+    Spring Boot gọi endpoint này để AI tạo lịch trình.
+    """
+    try:
+        result = generate_itinerary(
+            destination=request.destination,
+            duration_days=request.duration_days,
+            start_date=request.start_date,
+            preferences=request.preferences,
+            budget=request.budget
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Itinerary generate error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/itinerary/index")
+def itinerary_index(request: ItineraryIndexRequest, background_tasks: BackgroundTasks):
+    """
+    Spring Boot gọi sau khi lưu lịch trình vào MySQL để sync vào FAISS.
+    """
+    items = [it.dict() for it in request.itineraries]
+    background_tasks.add_task(index_itineraries, items)
+    return {"message": f"Indexing s{len(items)} itineraries vào FAISS..."}
+
 
 
 @app.post("/admin/rebuild-index")
