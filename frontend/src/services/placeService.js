@@ -12,6 +12,12 @@ export const getPublicPlaceById = async (id) => {
     return unwrapApi(res);
 };
 
+export const getNearbyPlaces = async (params = {}) => {
+    const query = buildQuery(params);
+    const res = await axiosClient.get(`/places/nearby${query ? `?${query}` : ""}`);
+    return unwrapApi(res);
+};
+
 export const getTopRatedPlaces = async (limit = 6) => {
     const res = await axiosClient.get(`/places/top-rated?limit=${limit}`);
     return unwrapApi(res);
