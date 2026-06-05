@@ -14,7 +14,7 @@ import java.io.IOException;
 @Slf4j
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    private static final String DEFAULT_REDIRECT = "http://localhost:3000/oauth2/redirect";
+    private static final String DEFAULT_REDIRECT = "http://localhost:5173/oauth2/redirect";
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,

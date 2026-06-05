@@ -23,6 +23,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     // Hardcode ở đây, không dùng @Value nữa để tránh lỗi yml
     private static final List<String> AUTHORIZED_REDIRECT_URIS = List.of(
+            "http://localhost:5173/oauth2/redirect",
             "http://localhost:3000/oauth2/redirect",
             "http://localhost:8080/oauth2/redirect"
     );

@@ -1,219 +1,267 @@
 import "./Itinerary.scss";
 
-const itineraryData = [
-    {
-        date: "29/04",
-        day: "Ngày 1",
-        weekday: "Thứ 2",
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
-        schedules: [
-            {
-                time: "07:30",
-                title:
-                    "Di chuyển từ TP.HCM đến Quy Nhơn",
+import { unwrapPageContent } from "~/services/apiUtils";
+import {
+    deleteItinerary,
+    generateItinerary,
+    getItineraries,
+} from "~/services/itineraryService";
 
-                description:
-                    "Xuất phát sớm để tránh kẹt xe và nghỉ ngơi trên đường.",
+const parseContent = (content) => {
+    if (!content) return null;
 
-                note:
-                    "Chuẩn bị đồ ăn nhẹ và nước uống.",
-            },
-
-            {
-                time: "11:30",
-                title:
-                    "Ăn trưa và checkin resort",
-
-                description:
-                    "Dùng bữa trưa gần biển sau đó về resort nhận phòng.",
-
-                note:
-                    "Checkin từ 14:00, có thể vào sớm nếu còn phòng.",
-            },
-
-            {
-                time: "15:00",
-                title:
-                    "Tắm biển & chụp ảnh",
-
-                description:
-                    "Khám phá bãi biển riêng của resort và thư giãn.",
-
-                note:
-                    "Mang theo kem chống nắng.",
-            },
-
-            {
-                time: "18:30",
-                title:
-                    "Ăn tối hải sản",
-
-                description:
-                    "Thưởng thức các món hải sản nổi tiếng Quy Nhơn.",
-
-                note:
-                    "Nên đặt bàn trước giờ cao điểm.",
-            },
-
-            {
-                time: "21:00",
-                title:
-                    "Cafe & dạo biển đêm",
-
-                description:
-                    "Ngắm biển đêm và thư giãn cùng bạn bè.",
-
-                note:
-                    "Có thể ghé surf bar gần biển.",
-            },
-        ],
-    },
-
-    {
-        date: "30/04",
-        day: "Ngày 2",
-        weekday: "Thứ 3",
-
-        schedules: [
-            {
-                time: "06:00",
-                title:
-                    "Ngắm bình minh",
-
-                description:
-                    "Dậy sớm ngắm bình minh và chụp ảnh.",
-
-                note:
-                    "Thời điểm đẹp nhất khoảng 5:45 - 6:15.",
-            },
-
-            {
-                time: "08:00",
-                title:
-                    "Khám phá Kỳ Co",
-
-                description:
-                    "Di chuyển bằng cano ra đảo Kỳ Co.",
-
-                note:
-                    "Chuẩn bị đồ bơi và khăn.",
-            },
-        ],
-    },
-];
+    try {
+        return JSON.parse(content);
+    } catch {
+        return null;
+    }
+};
 
 export default function Itinerary() {
+    const [form, setForm] = useState({
+        destination: "Da Nang",
+        durationDays: 3,
+        startDate: "",
+        preferences: "am thuc, bien, van hoa",
+        budget: "trung binh",
+    });
+    const [itineraries, setItineraries] = useState([]);
+    const [selected, setSelected] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        fetchItineraries();
+    }, []);
+
+    const selectedContent = useMemo(
+        () => parseContent(selected?.content),
+        [selected]
+    );
+
+    const fetchItineraries = async () => {
+        try {
+            const data = await getItineraries({
+                page: 0,
+                size: 10,
+            });
+            const list = unwrapPageContent(data);
+            setItineraries(list);
+            setSelected((prev) => prev || list[0] || null);
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                "Khong tai duoc lich trinh. Hay dang nhap neu API yeu cau token."
+            );
+        }
+    };
+
+    const handleChange = (e) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    const handleGenerate = async (e) => {
+        e.preventDefault();
+
+        try {
+            setLoading(true);
+            setError("");
+
+            const created = await generateItinerary({
+                ...form,
+                durationDays: Number(form.durationDays),
+                startDate: form.startDate || null,
+            });
+
+            setSelected(created);
+            await fetchItineraries();
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                "Khong tao duoc lich trinh"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        const ok = window.confirm("Xoa lich trinh nay?");
+        if (!ok) return;
+
+        await deleteItinerary(id);
+        setSelected(null);
+        fetchItineraries();
+    };
+
+    const renderStructuredContent = () => {
+        const days =
+            selectedContent?.days ||
+            selectedContent?.itinerary ||
+            selectedContent?.schedule;
+
+        if (!Array.isArray(days)) return null;
+
+        return days.map((dayItem, index) => {
+            const items =
+                dayItem.schedules ||
+                dayItem.activities ||
+                dayItem.items ||
+                [];
+
+            return (
+                <div
+                    className="day-section"
+                    key={index}
+                >
+                    <div className="day-info">
+                        <h2>{dayItem.date || `Ngay ${index + 1}`}</h2>
+                        <span>{dayItem.weekday || dayItem.title || ""}</span>
+                    </div>
+
+                    <div className="day-content">
+                        <div className="day-title">
+                            {dayItem.day || dayItem.title || `Ngay ${index + 1}`}
+                        </div>
+
+                        {items.map((item, idx) => (
+                            <div
+                                className="timeline-item"
+                                key={idx}
+                            >
+                                <div className="timeline-time">
+                                    {item.time || ""}
+                                </div>
+
+                                <div className="timeline-center">
+                                    <div className="timeline-dot" />
+
+                                    {idx !== items.length - 1 && (
+                                        <div className="timeline-line" />
+                                    )}
+                                </div>
+
+                                <div className="timeline-card">
+                                    <h3>{item.title || item.name || "Hoat dong"}</h3>
+                                    <p>{item.description || item.detail || ""}</p>
+
+                                    {(item.note || item.tips) && (
+                                        <div className="timeline-note">
+                                            <strong>Ghi chu:</strong>
+                                            <span>{item.note || item.tips}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        });
+    };
 
     return (
         <div className="itinerary-page">
-
             <div className="itinerary-header">
-
-                <h1>
-                    Lịnh trình cụ thể
-                </h1>
-
-                <p>
-                    Kế hoạch du lịch chi tiết cho chuyến đi của bạn.
-                </p>
-
+                <h1>Tao lich trinh AI</h1>
+                <p>Nhap nhu cau, goi API generate va xem cac lich trinh da luu.</p>
             </div>
+
+            <form
+                className="itinerary-form"
+                onSubmit={handleGenerate}
+            >
+                <input
+                    name="destination"
+                    value={form.destination}
+                    onChange={handleChange}
+                    placeholder="Diem den"
+                />
+
+                <input
+                    type="number"
+                    min="1"
+                    name="durationDays"
+                    value={form.durationDays}
+                    onChange={handleChange}
+                    placeholder="So ngay"
+                />
+
+                <input
+                    type="date"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={handleChange}
+                />
+
+                <input
+                    name="preferences"
+                    value={form.preferences}
+                    onChange={handleChange}
+                    placeholder="So thich"
+                />
+
+                <select
+                    name="budget"
+                    value={form.budget}
+                    onChange={handleChange}
+                >
+                    <option value="tiet kiem">Tiet kiem</option>
+                    <option value="trung binh">Trung binh</option>
+                    <option value="cao cap">Cao cap</option>
+                </select>
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                >
+                    {loading ? "Dang tao..." : "Tao lich trinh"}
+                </button>
+            </form>
+
+            {error && <p className="itinerary-error">{error}</p>}
+
+            <div className="itinerary-list">
+                {itineraries.map((item) => (
+                    <button
+                        key={item.id}
+                        className={selected?.id === item.id ? "active" : ""}
+                        onClick={() => setSelected(item)}
+                    >
+                        {item.title || item.destination}
+                    </button>
+                ))}
+            </div>
+
+            {selected && (
+                <div className="itinerary-selected">
+                    <div>
+                        <h2>{selected.title || selected.destination}</h2>
+                        <p>{selected.summary}</p>
+                    </div>
+
+                    <button onClick={() => handleDelete(selected.id)}>
+                        Xoa
+                    </button>
+                </div>
+            )}
 
             <div className="itinerary-wrapper">
-
-                {itineraryData.map((dayItem, index) => (
-
-                    <div
-                        className="day-section"
-                        key={index}
-                    >
-
-                        {/* LEFT DATE */}
-
-                        <div className="day-info">
-
-                            <h2>
-                                {dayItem.date}
-                            </h2>
-
-                            <span>
-                                {dayItem.weekday}
-                            </span>
-
-                        </div>
-
-                        {/* RIGHT CONTENT */}
-
-                        <div className="day-content">
-
-                            <div className="day-title">
-                                {dayItem.day}
-                            </div>
-
-                            {dayItem.schedules.map(
-                                (item, idx) => (
-
-                                    <div
-                                        className="timeline-item"
-                                        key={idx}
-                                    >
-
-                                        {/* TIME */}
-
-                                        <div className="timeline-time">
-                                            {item.time}
-                                        </div>
-
-                                        {/* DOT */}
-
-                                        <div className="timeline-center">
-
-                                            <div className="timeline-dot" />
-
-                                            {idx !==
-                                                dayItem.schedules.length - 1 && (
-                                                <div className="timeline-line" />
-                                            )}
-
-                                        </div>
-
-                                        {/* CONTENT */}
-
-                                        <div className="timeline-card">
-
-                                            <h3>
-                                                {item.title}
-                                            </h3>
-
-                                            <p>
-                                                {item.description}
-                                            </p>
-
-                                            <div className="timeline-note">
-
-                                                <strong>
-                                                    Ghi chú:
-                                                </strong>
-
-                                                <span>
-                                                    {item.note}
-                                                </span>
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-                                )
-                            )}
-
-                        </div>
-
-                    </div>
-                ))}
-
+                {renderStructuredContent() || (
+                    <pre className="itinerary-raw">
+                        {selected?.content || "Chua co lich trinh nao."}
+                    </pre>
+                )}
             </div>
-
         </div>
     );
 }

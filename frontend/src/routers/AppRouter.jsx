@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { privateRouter, adminRouter, publicRouter } from './routers.jsx';
 import DefaultLayout from '~/components/layouts/DefaultLayout/DefaultLayout.jsx';
 import AdminLayout from '~/components/adminLayouts/AdminLayouts.jsx';
+import PrivateRoute from './PrivateRouter.jsx';
 
 function AppRouter() {
     return (
@@ -32,17 +33,21 @@ function AppRouter() {
         {/* private router */}
             {privateRouter.map((item, index) => (
                 <Route key={index} path={item.path} element={
-                    <DefaultLayout>
-                        {item.element}
-                    </DefaultLayout>
+                    <PrivateRoute>
+                        <DefaultLayout>
+                            {item.element}
+                        </DefaultLayout>
+                    </PrivateRoute>
                 }></Route>
             ))}
         {/* admin router */}
             {adminRouter.map((item, index) => (
                 <Route key={index} path={item.path} element={
-                    <AdminLayout>
-                        {item.element}
-                    </AdminLayout>
+                    <PrivateRoute>
+                        <AdminLayout>
+                            {item.element}
+                        </AdminLayout>
+                    </PrivateRoute>
                 }></Route>
             ))}
         </Routes>

@@ -1,6 +1,9 @@
 import "./PlaceManagement.scss";
 
-import { useState } from "react";
+import {
+    useEffect,
+    useState,
+} from "react";
 
 import { Plus } from "lucide-react";
 
@@ -10,52 +13,68 @@ from "~/components/admin/places/PlaceCard/PlaceCard.jsx";
 import PlaceModal
 from "~/components/admin/places/PlaceModal/PlaceModal.jsx";
 
+import {
+    createPlace,
+    deletePlace,
+    getPlaces,
+    updatePlace,
+} from "~/services/adminService";
+
+import {
+    unwrapPageContent,
+} from "~/services/apiUtils";
+
 export default function PlaceManagement() {
 
-    const [places, setPlaces] = useState([
+    const [places, setPlaces] = useState([]);
 
-        {
-            id: 1,
+    const [loading, setLoading] = useState(true);
 
-            title: "Bali",
+    const [error, setError] = useState("");
 
-            image:
-                "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?q=80&w=1200",
+    useEffect(() => {
 
-            location: "Indonesia",
+        fetchPlaces();
 
-            openTime: "08:00 - 22:00",
+    }, []);
 
-            price: "$20",
+    const fetchPlaces = async () => {
 
-            description:
-                "Beautiful tropical island with beaches and temples.",
+        try {
 
-            map:
-                "https://maps.google.com",
-        },
+            setLoading(true);
+            setError("");
 
-        {
-            id: 2,
+            const data = await getPlaces(0, 10);
 
-            title: "Da Lat",
+            setPlaces(unwrapPageContent(data));
 
-            image:
-                "https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=1200",
+        } catch (err) {
 
-            location: "Vietnam",
+            setError(
+                err.response?.data?.message ||
+                "Không tải được danh sách địa điểm"
+            );
 
-            openTime: "All Day",
+        } finally {
 
-            price: "Free",
+            setLoading(false);
+        }
+    };
 
-            description:
-                "Romantic city with cool weather and pine forests.",
-
-            map:
-                "https://maps.google.com",
-        },
-    ]);
+    const toPlaceRequest = (place) => ({
+        name: place.name || place.title,
+        address: place.address || place.location,
+        city: place.city,
+        country: place.country,
+        description: place.description,
+        openingHours: place.openingHours || place.openTime,
+        priceRange: place.priceRange || place.price,
+        website: place.website || place.map,
+        placeType: place.placeType,
+        rating: place.rating,
+        source: place.source || "admin",
+    });
 
     /* MODAL */
 
@@ -65,23 +84,16 @@ export default function PlaceManagement() {
 
     /* ADD */
 
-    const handleAdd = (newPlace) => {
+    const handleAdd = async (newPlace) => {
 
-        setPlaces((prev) => [
+        await createPlace(toPlaceRequest(newPlace));
 
-            ...prev,
-
-            {
-                ...newPlace,
-
-                id: Date.now(),
-            },
-        ]);
+        fetchPlaces();
     };
 
     /* DELETE */
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
 
         const confirmDelete = window.confirm(
             "Delete this place?"
@@ -89,9 +101,9 @@ export default function PlaceManagement() {
 
         if (!confirmDelete) return;
 
-        setPlaces((prev) =>
-            prev.filter((place) => place.id !== id)
-        );
+        await deletePlace(id);
+
+        fetchPlaces();
     };
 
     /* EDIT */
@@ -105,17 +117,14 @@ export default function PlaceManagement() {
 
     /* UPDATE */
 
-    const handleUpdate = (updatedPlace) => {
+    const handleUpdate = async (updatedPlace) => {
 
-        setPlaces((prev) =>
-
-            prev.map((place) =>
-
-                place.id === updatedPlace.id
-                    ? updatedPlace
-                    : place
-            )
+        await updatePlace(
+            updatedPlace.id,
+            toPlaceRequest(updatedPlace)
         );
+
+        fetchPlaces();
     };
 
     return (
@@ -157,6 +166,14 @@ export default function PlaceManagement() {
             </div>
 
             {/* GRID */}
+
+            {loading && (
+                <p>Đang tải địa điểm...</p>
+            )}
+
+            {error && (
+                <p>{error}</p>
+            )}
 
             <div className="place-grid">
 

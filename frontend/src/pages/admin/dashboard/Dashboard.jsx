@@ -11,9 +11,6 @@ from "~/components/dashborad/StatsCard/StatsCard";
 import UserTable
 from "~/components/dashborad/UserTable/UserTable";
 
-import PostTable
-from "~/components/dashborad/PostTable/PostTable";
-
 import {
     Users,
     MapPinned,
@@ -94,16 +91,6 @@ function Dashboard() {
         },
 
         {
-            title: "Bài viết",
-
-            value:
-                dashboardData?.totalPosts || 0,
-
-            icon:
-                <FileText size={28} />,
-        },
-
-        {
             title: "Địa điểm du lịch",
 
             value:
@@ -172,26 +159,6 @@ function Dashboard() {
                 <UserTable
                     users={
                         dashboardData?.recentUsers || []
-                    }
-                />
-
-            </div>
-
-            {/* RECENT POSTS */}
-
-            <div className="dashboard-section">
-
-                <div className="section-header">
-
-                    <h2>
-                        Bài viết gần đây
-                    </h2>
-
-                </div>
-
-                <PostTable
-                    posts={
-                        dashboardData?.recentPosts || []
                     }
                 />
 

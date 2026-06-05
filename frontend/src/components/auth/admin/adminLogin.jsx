@@ -102,7 +102,7 @@ const AdminLogin = () => {
 
             saveAuth(
 
-                data.token,
+                data.accessToken,
 
                 data.user
             );

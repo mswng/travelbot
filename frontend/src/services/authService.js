@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 
 export const adminLogin =
-async (username, password) => {
+async (email, password) => {
 
     const res =
         await axiosClient.post(
@@ -14,7 +14,7 @@ async (username, password) => {
             }
         );
 
-    return res.data;
+    return res.data?.data ?? res.data;
 };
 
 /* ========================= */
@@ -42,6 +42,8 @@ async (googleToken) => {
 /* ========================= */
 
 export const logout = () => {
+
+    axiosClient.post("/auth/logout").catch(() => {});
 
     localStorage.removeItem("token");
 
@@ -89,4 +91,13 @@ export const getCurrentUser = () => {
 export const isAuthenticated = () => {
 
     return !!localStorage.getItem("token");
+};
+
+export const fetchCurrentUser =
+async () => {
+
+    const res =
+        await axiosClient.get("/auth/me");
+
+    return res.data?.data ?? res.data;
 };

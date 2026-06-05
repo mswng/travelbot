@@ -13,6 +13,38 @@ export default function PlaceCard({
     onDelete,
     onEdit,
 }) {
+    const image =
+        place.image ||
+        place.primaryPhotoUrl ||
+        place.photoUrls?.[0] ||
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200";
+
+    const title =
+        place.title ||
+        place.name;
+
+    const location =
+        place.location ||
+        place.address ||
+        place.city ||
+        place.country ||
+        "Chưa có địa chỉ";
+
+    const openTime =
+        place.openTime ||
+        place.openingHours ||
+        "Chưa cập nhật";
+
+    const price =
+        place.price ||
+        place.priceRange ||
+        (place.priceLevel ? `${place.priceLevel} sao giá` : "Chưa cập nhật");
+
+    const mapUrl =
+        place.map ||
+        (place.latitude && place.longitude
+            ? `https://www.google.com/maps?q=${place.latitude},${place.longitude}`
+            : place.website);
 
     return (
 
@@ -21,8 +53,8 @@ export default function PlaceCard({
             {/* IMAGE */}
 
             <img
-                src={place.image}
-                alt={place.title}
+                src={image}
+                alt={title}
             />
 
             {/* CONTENT */}
@@ -30,14 +62,14 @@ export default function PlaceCard({
             <div className="place-content">
 
                 <h3>
-                    {place.title}
+                    {title}
                 </h3>
 
                 <p className="location">
 
                     <MapPinned size={16} />
 
-                    {place.location}
+                    {location}
 
                 </p>
 
@@ -45,7 +77,7 @@ export default function PlaceCard({
 
                     <Clock3 size={16} />
 
-                    {place.openTime}
+                    {openTime}
 
                 </p>
 
@@ -53,13 +85,13 @@ export default function PlaceCard({
 
                     <Ticket size={16} />
 
-                    {place.price}
+                    {price}
 
                 </p>
 
                 <div className="desc">
 
-                    {place.description}
+                    {place.description || "Chưa có mô tả"}
 
                 </div>
 
@@ -68,8 +100,9 @@ export default function PlaceCard({
                 <div className="place-actions">
 
                     <a
-                        href={place.map}
+                        href={mapUrl || "#"}
                         target="_blank"
+                        rel="noreferrer"
                     >
                         Xem bản đồ
                     </a>

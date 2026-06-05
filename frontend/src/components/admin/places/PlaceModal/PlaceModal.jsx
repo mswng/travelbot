@@ -40,7 +40,32 @@ export default function PlaceModal({
 
         if (editingPlace) {
 
-            setForm(editingPlace);
+            setForm({
+                id: editingPlace.id,
+                title: editingPlace.name || editingPlace.title || "",
+                image:
+                    editingPlace.primaryPhotoUrl ||
+                    editingPlace.photoUrls?.[0] ||
+                    editingPlace.image ||
+                    "",
+                location:
+                    editingPlace.address ||
+                    editingPlace.location ||
+                    "",
+                openTime:
+                    editingPlace.openingHours ||
+                    editingPlace.openTime ||
+                    "",
+                price:
+                    editingPlace.priceRange ||
+                    editingPlace.price ||
+                    "",
+                description: editingPlace.description || "",
+                map:
+                    editingPlace.website ||
+                    editingPlace.map ||
+                    "",
+            });
 
         } else {
 

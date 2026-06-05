@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { unwrapApi } from "./apiUtils";
 
 /* DASHBOARD */
 
@@ -8,7 +9,7 @@ async () => {
     const res =
         await axiosClient.get("/admin/dashboard");
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 /* ========================= */
@@ -24,7 +25,7 @@ async (page = 0, size = 10) => {
             `/admin/places?page=${page}&size=${size}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const getPlaceById =
@@ -35,7 +36,7 @@ async (id) => {
             `/admin/places/${id}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const createPlace =
@@ -47,7 +48,7 @@ async (data) => {
             data
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const updatePlace =
@@ -59,7 +60,7 @@ async (id, data) => {
             data
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const deletePlace =
@@ -70,7 +71,7 @@ async (id) => {
             `/admin/places/${id}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 /* ========================= */
@@ -86,7 +87,7 @@ async (page = 0, size = 10) => {
             `/admin/users?page=${page}&size=${size}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const getUserById =
@@ -97,7 +98,7 @@ async (id) => {
             `/admin/users/${id}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const createUser =
@@ -109,7 +110,7 @@ async (data) => {
             data
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const updateUser =
@@ -121,7 +122,7 @@ async (id, data) => {
             data
         );
 
-    return res.data;
+    return unwrapApi(res);
 };
 
 export const deleteUser =
@@ -132,5 +133,5 @@ async (id) => {
             `/admin/users/${id}`
         );
 
-    return res.data;
+    return unwrapApi(res);
 };

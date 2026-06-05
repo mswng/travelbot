@@ -4,11 +4,20 @@ import {
     LayoutDashboard,
     Users,
     FileText,
-    MapPinned,
     LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+import { logout } from "~/services/authService";
 
 export default function AdminSidebar() {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        localStorage.removeItem("rememberUser");
+        navigate("/admin/login", { replace: true });
+    };
 
     return (
         <aside className="admin-sidebar">
@@ -41,7 +50,11 @@ export default function AdminSidebar() {
 
             </nav>
 
-            <button className="logout-btn">
+            <button
+                className="logout-btn"
+                type="button"
+                onClick={handleLogout}
+            >
 
                 <LogOut size={18} />
                 Đăng xuất

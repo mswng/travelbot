@@ -48,7 +48,8 @@ export default function UserTable({
 
                                 <span
                                     className={
-                                        user.role === "ADMIN"
+                                        user.role === "ADMIN" ||
+                                        user.role === "ROLE_ADMIN"
                                             ? "role admin"
                                             : "role user"
                                     }

@@ -12,10 +12,12 @@ import Maps from "~/pages/maps/Maps.jsx";
 import Nearby from "~/pages/nearby/Nearby.jsx";
 import Recommendations from "~/pages/recommendation/Recommendation.jsx";
 import Itinerary from "~/pages/itinerary/Itinerary.jsx";
+import OAuthRedirect from "~/pages/auth/OAuthRedirect.jsx";
 
 const publicRouter = [
     {path: '/login', element: <LoginPage/>, layout: null},
     {path: '/admin/login', element: <AdminLoginPage/>, layout: null},
+    {path: '/oauth2/redirect', element: <OAuthRedirect/>, layout: null},
     {path: '/', element: <Home/>},
 ]
 

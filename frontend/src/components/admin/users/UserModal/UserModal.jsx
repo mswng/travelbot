@@ -25,6 +25,8 @@ export default function UserModal({
 
         email: "",
 
+        password: "",
+
         role: "USER",
     });
 
@@ -42,7 +44,9 @@ export default function UserModal({
 
                 email: editingUser.email,
 
-                role: editingUser.role,
+                password: "",
+
+                role: editingUser.role?.replace("ROLE_", "") || "USER",
             });
 
         } else {
@@ -54,6 +58,8 @@ export default function UserModal({
                 name: "",
 
                 email: "",
+
+                password: "",
 
                 role: "USER",
             });
@@ -92,7 +98,8 @@ export default function UserModal({
 
         if (
             !form.name.trim() ||
-            !form.email.trim()
+            !form.email.trim() ||
+            (!editingUser && !form.password.trim())
         ) {
 
             alert("Please fill all fields");
@@ -127,6 +134,8 @@ export default function UserModal({
             name: "",
 
             email: "",
+
+            password: "",
 
             role: "USER",
         });
@@ -202,6 +211,27 @@ export default function UserModal({
                         />
 
                     </div>
+
+                    {/* ROLE */}
+
+                    {!editingUser && (
+
+                        <div className="form-group">
+
+                            <label>
+                                Mật khẩu
+                            </label>
+
+                            <input
+                                type="password"
+                                name="password"
+                                value={form.password}
+                                onChange={handleChange}
+                                placeholder="Nhập mật khẩu"
+                            />
+
+                        </div>
+                    )}
 
                     {/* ROLE */}
 

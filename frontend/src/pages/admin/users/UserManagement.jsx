@@ -1,6 +1,9 @@
 import "./UserManagement.scss";
 
-import { useState } from "react";
+import {
+    useEffect,
+    useState,
+} from "react";
 
 import UserTable
 from "~/components/admin/users/UserTable/UserTable.jsx";
@@ -10,26 +13,72 @@ from "~/components/admin/users/UserModal/UserModal.jsx";
 
 import { Plus } from "lucide-react";
 
+import {
+    createUser,
+    deleteUser,
+    getUsers,
+    updateUser,
+} from "~/services/adminService";
+
+import {
+    unwrapPageContent,
+} from "~/services/apiUtils";
+
 export default function UserManagement() {
 
     /* USERS */
 
-    const [users, setUsers] = useState([
+    const [users, setUsers] = useState([]);
 
-        {
-            id: 1,
-            name: "Nguyen Van A",
-            email: "admin@gmail.com",
-            role: "ADMIN",
-        },
+    const [loading, setLoading] = useState(true);
 
-        {
-            id: 2,
-            name: "Tran Thi B",
-            email: "user@gmail.com",
-            role: "USER",
-        },
-    ]);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+
+        fetchUsers();
+
+    }, []);
+
+    const normalizeUser = (user) => ({
+        ...user,
+        role: user.role?.replace("ROLE_", "") || "USER",
+    });
+
+    const toUserRequest = (user) => ({
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: user.role?.startsWith("ROLE_")
+            ? user.role
+            : `ROLE_${user.role || "USER"}`,
+    });
+
+    const fetchUsers = async () => {
+
+        try {
+
+            setLoading(true);
+            setError("");
+
+            const data = await getUsers(0, 10);
+
+            setUsers(
+                unwrapPageContent(data).map(normalizeUser)
+            );
+
+        } catch (err) {
+
+            setError(
+                err.response?.data?.message ||
+                "Không tải được danh sách người dùng"
+            );
+
+        } finally {
+
+            setLoading(false);
+        }
+    };
 
     /* MODAL */
 
@@ -41,7 +90,7 @@ export default function UserManagement() {
 
     /* DELETE */
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
 
         const confirmDelete = window.confirm(
             "Delete this user?"
@@ -49,24 +98,18 @@ export default function UserManagement() {
 
         if (!confirmDelete) return;
 
-        setUsers((prev) =>
-            prev.filter((user) => user.id !== id)
-        );
+        await deleteUser(id);
+
+        fetchUsers();
     };
 
     /* ADD */
 
-    const handleAddUser = (newUser) => {
+    const handleAddUser = async (newUser) => {
 
-        setUsers((prev) => [
+        await createUser(toUserRequest(newUser));
 
-            ...prev,
-
-            {
-                ...newUser,
-                id: Date.now(),
-            },
-        ]);
+        fetchUsers();
     };
 
     /* EDIT */
@@ -80,17 +123,14 @@ export default function UserManagement() {
 
     /* UPDATE */
 
-    const handleUpdateUser = (updatedUser) => {
+    const handleUpdateUser = async (updatedUser) => {
 
-        setUsers((prev) =>
+        const { password, ...payload } =
+            toUserRequest(updatedUser);
 
-            prev.map((user) =>
+        await updateUser(updatedUser.id, payload);
 
-                user.id === updatedUser.id
-                    ? updatedUser
-                    : user
-            )
-        );
+        fetchUsers();
     };
 
     /* CLOSE MODAL */
@@ -139,6 +179,14 @@ export default function UserManagement() {
             </div>
 
             {/* TABLE */}
+
+            {loading && (
+                <p>Đang tải người dùng...</p>
+            )}
+
+            {error && (
+                <p>{error}</p>
+            )}
 
             <UserTable
                 users={users}

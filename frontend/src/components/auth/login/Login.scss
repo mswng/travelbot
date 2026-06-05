@@ -110,9 +110,10 @@
 
 /* BUTTON */
 
-.login-btn {
+.login-btn-bot {
     width: 100%;
-    height: 78px;
+    height: 48px;
+    margin: 5% auto;
 
     border-radius: 999px;
 
@@ -138,9 +139,11 @@
     box-shadow:
         0 6px 24px rgba(0,0,0,0.08);
 
-    img {
+    img,
+    .google-icon {
         width: 26px;
         height: 26px;
+        flex-shrink: 0;
     }
 
     &:hover {
@@ -185,7 +188,7 @@
 
 .guest-btn {
     width: 100%;
-    height: 64px;
+    height: 48px;
 
     border-radius: 999px;
 
