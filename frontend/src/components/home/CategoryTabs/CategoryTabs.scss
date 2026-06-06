@@ -21,6 +21,13 @@
         cursor: pointer;
 
         padding-bottom: 8px;
+
+        small {
+            color: #6b7280;
+
+            font-size: 13px;
+            font-weight: 700;
+        }
     }
 
     .active {

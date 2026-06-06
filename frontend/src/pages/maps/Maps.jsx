@@ -26,6 +26,7 @@ import { useLocation } from "react-router-dom";
 
 import { unwrapPageContent } from "~/services/apiUtils";
 import {
+    getPublicPlaceById,
     getNearbyPlaces,
     getPublicPlaces,
 } from "~/services/placeService";
@@ -209,9 +210,17 @@ export default function Maps() {
     const navigationLocation = useLocation();
     const selectedPlaceFromNavigation = navigationLocation.state?.selectedPlace;
     const currentLocationFromNavigation = navigationLocation.state?.currentLocation;
+    const searchParams = useMemo(
+        () => new URLSearchParams(navigationLocation.search),
+        [navigationLocation.search]
+    );
+    const initialKeyword = searchParams.get("keyword") || "";
+    const initialCity = searchParams.get("city") || "";
+    const initialType = searchParams.get("type") || "";
+    const initialPlaceId = searchParams.get("placeId") || "";
     const [places, setPlaces] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
-    const [keyword, setKeyword] = useState("");
+    const [keyword, setKeyword] = useState(initialKeyword);
     const [currentLocation, setCurrentLocation] = useState(null);
     const [routeInfo, setRouteInfo] = useState(null);
     const [routeLoading, setRouteLoading] = useState(false);
@@ -233,6 +242,20 @@ export default function Maps() {
     const routePositions = routeInfo?.positions || [];
 
     useEffect(() => {
+        if (initialPlaceId) {
+            fetchPlaceById(initialPlaceId);
+            return;
+        }
+
+        if (initialKeyword || initialCity || initialType || initialPlaceId) {
+            fetchPlaces(initialKeyword, {
+                city: initialCity,
+                placeType: initialType,
+                selectedPlaceId: initialPlaceId,
+            });
+            return;
+        }
+
         if (currentLocationFromNavigation) {
             setCurrentLocation(currentLocationFromNavigation);
             fetchNearbyPlaces(currentLocationFromNavigation);
@@ -241,6 +264,33 @@ export default function Maps() {
 
         handleUseCurrentLocation(true);
     }, []);
+
+    const fetchPlaceById = async (placeId) => {
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await getPublicPlaceById(placeId);
+            const place = normalizePlace(data);
+
+            if (!place) {
+                fetchPlaces();
+                return;
+            }
+
+            setPlaces([place]);
+            setSelectedId(place.id);
+            handleUseCurrentLocation(false, false);
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                "Không thể tải địa điểm được chọn."
+            );
+            fetchPlaces();
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const shouldLoadRoute =
@@ -262,13 +312,15 @@ export default function Maps() {
         return () => controller.abort();
     }, [currentLocation, selectedPlace]);
 
-    const fetchPlaces = async (searchKeyword = keyword) => {
+    const fetchPlaces = async (searchKeyword = keyword, filters = {}) => {
         try {
             setLoading(true);
             setError("");
 
             const data = await getPublicPlaces({
                 keyword: searchKeyword,
+                city: filters.city,
+                placeType: filters.placeType,
                 page: 0,
                 size: 50,
                 sortBy: "rating",
@@ -289,8 +341,13 @@ export default function Maps() {
                 return;
             }
 
+            const requestedPlaceId = filters.selectedPlaceId
+                ? Number(filters.selectedPlaceId)
+                : null;
+            const hasRequestedPlace = mappedPlaces.some((place) => place.id === requestedPlaceId);
+
             setPlaces(mappedPlaces);
-            setSelectedId(mappedPlaces[0].id);
+            setSelectedId(hasRequestedPlace ? requestedPlaceId : mappedPlaces[0].id);
         } catch (err) {
             setPlaces(fallbackPlaces);
             setSelectedId(fallbackPlaces[0].id);
@@ -387,7 +444,7 @@ export default function Maps() {
         }
     };
 
-    const handleUseCurrentLocation = (fallbackOnError = false) => {
+    const handleUseCurrentLocation = (fallbackOnError = false, loadNearby = true) => {
         setLocationError("");
 
         if (!("geolocation" in navigator)) {
@@ -410,7 +467,9 @@ export default function Maps() {
                 };
 
                 setCurrentLocation(location);
-                fetchNearbyPlaces(location);
+                if (loadNearby) {
+                    fetchNearbyPlaces(location);
+                }
                 setLocating(false);
             },
             (geoError) => {

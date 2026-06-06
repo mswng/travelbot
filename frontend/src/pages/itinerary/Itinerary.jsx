@@ -5,6 +5,7 @@ import {
     useMemo,
     useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { unwrapPageContent } from "~/services/apiUtils";
 import {
@@ -130,6 +131,52 @@ const getActivityTime = (item) => {
     }
 
     return item.time || item.start_time || "";
+};
+
+const formatDisplayDate = (date) => {
+    if (!date) {
+        return "";
+    }
+
+    const value = String(date).trim();
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (isoMatch) {
+        return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+    }
+
+    return value;
+};
+
+const addDays = (dateValue, daysToAdd) => {
+    if (!dateValue) {
+        return "";
+    }
+
+    const date = new Date(`${dateValue}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    date.setDate(date.getDate() + daysToAdd);
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
+};
+
+const getDayLabel = (dayItem, index, startDate) => {
+    const dayNumber = dayItem.day || index + 1;
+    const date =
+        formatDisplayDate(dayItem.date) ||
+        addDays(startDate, index);
+
+    return date
+        ? `Ngày ${dayNumber}: ${date}`
+        : `Ngày ${dayNumber}`;
 };
 
 const toReadableLabel = (key) =>
@@ -319,6 +366,7 @@ const extraSections = [
 ];
 
 export default function Itinerary() {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         destination: "Địa điểm bạn muốn đi du lịch, ví dụ: Đà Nẵng",
         durationDays: 3,
@@ -398,6 +446,16 @@ export default function Itinerary() {
         fetchItineraries();
     };
 
+    const handleOpenMap = (value) => {
+        const keyword = formatReadableValue(value).trim();
+
+        if (!keyword) {
+            return;
+        }
+
+        navigate(`/maps?keyword=${encodeURIComponent(keyword)}`);
+    };
+
     const renderStructuredContent = () => {
         const days = findDayList(selectedContent);
 
@@ -431,7 +489,7 @@ export default function Itinerary() {
                             key={index}
                         >
                             <div className="day-info">
-                                <h2>{dayItem.date || `Ngày ${dayItem.day || index + 1}`}</h2>
+                                <h2>{getDayLabel(dayItem, index, selected?.startDate)}</h2>
                                 <span>{dayItem.weekday || dayItem.title || ""}</span>
                             </div>
 
@@ -517,6 +575,16 @@ export default function Itinerary() {
                                                     <span>{formatReadableValue(item.notes)}</span>
                                                 </div>
                                             )}
+
+                                            {item.location && (
+                                                <button
+                                                    className="timeline-map-btn"
+                                                    type="button"
+                                                    onClick={() => handleOpenMap(item.location)}
+                                                >
+                                                    Xem bản đồ
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -545,6 +613,16 @@ export default function Itinerary() {
                                                         formatReadableValue(meal.estimated_cost),
                                                     ].filter(Boolean).join(" | ")}
                                                 </span>
+
+                                                {meal.place && (
+                                                    <button
+                                                        className="timeline-map-btn"
+                                                        type="button"
+                                                        onClick={() => handleOpenMap(meal.place)}
+                                                    >
+                                                        Xem bản đồ
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
 

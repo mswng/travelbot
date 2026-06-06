@@ -12,6 +12,11 @@ export const getPublicPlaceById = async (id) => {
     return unwrapApi(res);
 };
 
+export const getHomeData = async () => {
+    const res = await axiosClient.get("/places/home");
+    return unwrapApi(res);
+};
+
 export const getNearbyPlaces = async (params = {}) => {
     const query = buildQuery(params);
     const res = await axiosClient.get(`/places/nearby${query ? `?${query}` : ""}`);

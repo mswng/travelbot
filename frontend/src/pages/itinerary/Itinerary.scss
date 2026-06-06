@@ -318,6 +318,28 @@
     }
 }
 
+.timeline-map-btn {
+    width: fit-content;
+    min-height: 36px;
+
+    margin-top: 12px;
+    padding: 0 14px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: #111827;
+    color: #fff;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
 .day-notes {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
