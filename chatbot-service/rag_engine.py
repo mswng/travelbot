@@ -6,169 +6,243 @@ from config import OLLAMA_BASE_URL, OLLAMA_MODEL
 from typing import List, Dict
 import logging
 import re
+import unicodedata
 
 logger = logging.getLogger(__name__)
 
-# Khởi tạo LLM một lần
 llm = ChatOllama(
     base_url=OLLAMA_BASE_URL,
     model=OLLAMA_MODEL,
-    temperature=0.7,
-    num_predict=1024,
+    temperature=0.2,
+    num_predict=900,
 )
 
-SYSTEM_PROMPT = """Bạn là trợ lý du lịch thông minh, am hiểu các địa điểm du lịch, 
-nhà hàng, quán cafe tại Việt Nam. Bạn trả lời bằng tiếng Việt, thân thiện và hữu ích.
+SYSTEM_PROMPT = """Bạn là TravelBot, trợ lý du lịch dùng dữ liệu địa điểm nội bộ tại Việt Nam.
 
-Khi được cung cấp thông tin về các địa điểm, hãy dựa vào đó để trả lời.
-Nếu không có thông tin phù hợp, hãy thành thật nói không tìm thấy và gợi ý người dùng 
-thử từ khóa khác hoặc tìm trên Google Maps.
+Quy tắc bắt buộc:
+1. Chỉ gợi ý địa điểm xuất hiện trong phần DỮ LIỆU ĐỊA ĐIỂM được cung cấp.
+2. Nếu người dùng hỏi một thành phố cụ thể, chỉ được dùng địa điểm thuộc đúng thành phố đó.
+3. Không tự tạo tên địa điểm, địa chỉ, số điện thoại, giá hoặc giờ mở cửa.
+4. Nếu dữ liệu không có địa điểm phù hợp, nói rõ: "Hiện dữ liệu của mình chưa có địa điểm phù hợp cho yêu cầu này." Sau đó gợi ý người dùng đổi từ khóa hoặc chọn thành phố khác.
+5. Trả lời bằng tiếng Việt, ngắn gọn, rõ ràng.
 
-Định dạng câu trả lời:
-- Trả lời ngắn gọn, rõ ràng
-- Nếu gợi ý địa điểm, liệt kê tên + địa chỉ
-- Không bịa đặt thông tin"""
+Khi gợi ý địa điểm, mỗi mục nên có:
+- Tên địa điểm
+- Loại địa điểm nếu có
+- Địa chỉ
+- Rating/giá nếu dữ liệu có
+"""
+
+CITY_ALIASES = {
+    "ba ria vung tau": "Bà Rịa - Vũng Tàu",
+    "can tho": "Cần Thơ",
+    "da lat": "Đà Lạt",
+    "dalat": "Đà Lạt",
+    "da nang": "Đà Nẵng",
+    "danang": "Đà Nẵng",
+    "ha long": "Hạ Long",
+    "halong": "Hạ Long",
+    "ha noi": "Hà Nội",
+    "hanoi": "Hà Nội",
+    "hai phong": "Hải Phòng",
+    "ho chi minh": "TP. Hồ Chí Minh",
+    "ho chi minh city": "TP. Hồ Chí Minh",
+    "hcm": "TP. Hồ Chí Minh",
+    "sai gon": "TP. Hồ Chí Minh",
+    "saigon": "TP. Hồ Chí Minh",
+    "hue": "Huế",
+    "nha trang": "Nha Trang",
+    "phu quoc": "Phú Quốc",
+    "quy nhon": "Quy Nhơn",
+    "sa pa": "Sa Pa",
+    "sapa": "Sa Pa",
+    "vung tau": "Vũng Tàu",
+}
+
+TYPE_KEYWORDS = {
+    "restaurant": ["nha hang", "quan an", "an uong", "mon an", "do an", "food", "restaurant"],
+    "cafe": ["cafe", "ca phe", "coffee"],
+    "hotel": ["khach san", "hotel", "homestay", "resort", "luu tru"],
+    "park": ["cong vien", "park"],
+    "tourist_attraction": ["du lich", "tham quan", "dia diem", "di choi", "attraction", "bao tang", "chua"],
+    "bar": ["bar", "pub"],
+    "shopping": ["mua sam", "cho", "market", "shopping"],
+}
+
+
+def _normalize(value: object) -> str:
+    text = str(value or "").strip().lower()
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+    text = re.sub(r"[_\-]+", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 
 def _extract_search_intent(message: str) -> Dict:
-    """Trích xuất ý định tìm kiếm từ câu hỏi của user."""
-    message_lower = message.lower()
-
-    # Detect city
+    normalized_message = _normalize(message)
     city = None
-    city_keywords = {
-        "hà nội": "Hà Nội", "hanoi": "Hà Nội",
-        "hồ chí minh": "Hồ Chí Minh", "sài gòn": "Hồ Chí Minh", "saigon": "Hồ Chí Minh", "hcm": "Hồ Chí Minh",
-        "đà nẵng": "Đà Nẵng", "da nang": "Đà Nẵng",
-        "hội an": "Hội An", "hoi an": "Hội An",
-        "nha trang": "Nha Trang",
-        "đà lạt": "Đà Lạt", "da lat": "Đà Lạt",
-        "phú quốc": "Phú Quốc", "phu quoc": "Phú Quốc",
-        "huế": "Huế", "hue": "Huế",
-    }
-    for kw, city_name in city_keywords.items():
-        if kw in message_lower:
+    place_type = None
+
+    for alias, city_name in CITY_ALIASES.items():
+        if alias in normalized_message:
             city = city_name
             break
 
-    # Detect place type
-    place_type = None
-    type_keywords = {
-        "nhà hàng": "restaurant", "restaurant": "restaurant", "ăn": "restaurant",
-        "quán ăn": "restaurant", "đồ ăn": "restaurant",
-        "cafe": "cafe", "cà phê": "cafe", "coffee": "cafe",
-        "khách sạn": "hotel", "hotel": "hotel", "resort": "resort",
-        "du lịch": "tourist_attraction", "tham quan": "tourist_attraction",
-        "điểm đến": "tourist_attraction", "địa điểm": "tourist_attraction",
-        "bar": "bar", "pub": "bar",
-        "mua sắm": "shopping", "chợ": "market",
-    }
-    for kw, ptype in type_keywords.items():
-        if kw in message_lower:
-            place_type = ptype
+    for type_name, keywords in TYPE_KEYWORDS.items():
+        if any(keyword in normalized_message for keyword in keywords):
+            place_type = type_name
             break
 
-    return {"city": city, "place_type": place_type}
+    return {
+        "city": city,
+        "place_type": place_type,
+    }
+
+
+def _place_matches_city(place: Dict, city: str = None) -> bool:
+    if not city:
+        return True
+
+    expected = _normalize(city).replace("tp ", "").replace("thanh pho ", "")
+    place_city = _normalize(place.get("city"))
+    address = _normalize(place.get("address"))
+
+    return expected in place_city or expected in address
+
+
+def _merge_places(*groups: List[Dict]) -> List[Dict]:
+    merged = []
+    seen_ids = set()
+
+    for group in groups:
+        for place in group:
+            place_id = str(place.get("id") or place.get("place_id") or place.get("name"))
+            if place_id not in seen_ids:
+                seen_ids.add(place_id)
+                merged.append(place)
+
+    return merged
 
 
 def _format_places_context(places: List[Dict]) -> str:
-    """Format danh sách địa điểm thành context cho LLM."""
     if not places:
-        return "Không tìm thấy địa điểm phù hợp."
+        return "DỮ LIỆU ĐỊA ĐIỂM: Không có địa điểm phù hợp."
 
-    lines = ["=== THÔNG TIN ĐỊA ĐIỂM ==="]
-    for i, p in enumerate(places[:5], 1):  # Max 5 địa điểm
-        name = p.get("name", "")
-        city = p.get("city", "")
-        address = p.get("address", "")
-        price = p.get("price_range", "")
-        phone = p.get("phone", "")
-        ptype = p.get("place_type", "")
+    lines = ["DỮ LIỆU ĐỊA ĐIỂM ĐƯỢC PHÉP SỬ DỤNG:"]
+    for index, place in enumerate(places[:8], 1):
+        name = place.get("name") or "Chưa rõ tên"
+        place_type = place.get("place_type") or "Chưa rõ loại"
+        city = place.get("city") or "Chưa rõ thành phố"
+        address = place.get("address") or "Chưa có địa chỉ"
+        rating = place.get("rating")
+        price = place.get("price_range")
+        phone = place.get("phone")
+        opening_hours = place.get("opening_hours")
 
-        line = f"{i}. {name}"
-        if ptype: line += f" ({ptype})"
-        if city: line += f" - {city}"
-        if address: line += f"\n   📍 {address}"
-        if price: line += f" | 💰 {price}"
-        if phone: line += f"\n   📞 {phone}"
+        line = [
+            f"{index}. Tên: {name}",
+            f"Loại: {place_type}",
+            f"Thành phố: {city}",
+            f"Địa chỉ: {address}",
+        ]
+        if rating:
+            line.append(f"Rating: {rating}/5")
+        if price:
+            line.append(f"Giá: {price}")
+        if opening_hours:
+            line.append(f"Giờ mở cửa: {opening_hours}")
+        if phone:
+            line.append(f"SĐT: {phone}")
 
-        lines.append(line)
+        lines.append(" | ".join(line))
 
     return "\n".join(lines)
 
 
-def chat(message: str, history: List[Dict] = None) -> Dict:
-    """
-    Xử lý một lượt chat với RAG.
-    
-    Args:
-        message: Câu hỏi của user
-        history: Lịch sử chat [{"role": "user/assistant", "content": "..."}]
-    
-    Returns:
-        {"answer": str, "places": List[Dict], "sources_used": int}
-    """
-    history = history or []
-
-    # 1. Phân tích intent
-    intent = _extract_search_intent(message)
-    logger.info(f"Intent: {intent}")
-
-    # 2. RAG - tìm kiếm song song: vector search + keyword search
-    vector_results = semantic_search(
-        query=message,
-        top_k=5,
-        city=intent.get("city"),
-        place_type=intent.get("place_type")
-    )
-
-    # Nếu vector search ít kết quả, bổ sung bằng keyword search
-    keyword_results = []
-    if len(vector_results) < 3:
-        keyword_results = search_places_by_keyword(
-            keyword=message,
-            city=intent.get("city"),
-            place_type=intent.get("place_type"),
-            limit=5
+def _empty_answer(intent: Dict) -> str:
+    city = intent.get("city")
+    if city:
+        return (
+            f"Hiện dữ liệu của mình chưa có địa điểm phù hợp tại {city} cho yêu cầu này. "
+            "Bạn có thể thử từ khóa khác, ví dụ: nhà hàng, khách sạn, quán cafe hoặc địa điểm tham quan."
         )
 
-    # Merge kết quả, ưu tiên vector search
-    seen_ids = {p.get("id") for p in vector_results}
-    merged = list(vector_results)
-    for p in keyword_results:
-        if str(p.get("id")) not in seen_ids:
-            merged.append(p)
+    return (
+        "Hiện dữ liệu của mình chưa có địa điểm phù hợp cho yêu cầu này. "
+        "Bạn có thể thử hỏi rõ hơn về thành phố hoặc loại địa điểm muốn tìm."
+    )
 
-    # 3. Build context
-    context = _format_places_context(merged)
 
-    # 4. Build messages cho LLM
+def chat(message: str, history: List[Dict] = None) -> Dict:
+    history = history or []
+    intent = _extract_search_intent(message)
+    logger.info("Intent: %s", intent)
+
+    vector_results = semantic_search(
+        query=message,
+        top_k=20 if intent.get("city") else 8,
+        place_type=intent.get("place_type"),
+    )
+    vector_results = [
+        place for place in vector_results
+        if _place_matches_city(place, intent.get("city"))
+    ][:8]
+
+    keyword = intent.get("place_type") or message
+    keyword_results = search_places_by_keyword(
+        keyword=keyword,
+        city=intent.get("city"),
+        place_type=intent.get("place_type"),
+        limit=8,
+    )
+    keyword_results = [
+        place for place in keyword_results
+        if _place_matches_city(place, intent.get("city"))
+    ]
+
+    places = _merge_places(vector_results, keyword_results)[:8]
+
+    if not places:
+        return {
+            "answer": _empty_answer(intent),
+            "places": [],
+            "sources_used": 0,
+        }
+
+    context = _format_places_context(places)
     messages = [SystemMessage(content=SYSTEM_PROMPT)]
 
-    # Thêm lịch sử chat (tối đa 6 lượt gần nhất)
-    for h in history[-6:]:
-        if h["role"] == "user":
-            messages.append(HumanMessage(content=h["content"]))
-        else:
-            messages.append(AIMessage(content=h["content"]))
+    for item in history[-6:]:
+        role = item.get("role")
+        content = item.get("content", "")
+        if role == "user":
+            messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            messages.append(AIMessage(content=content))
 
-    # Câu hỏi hiện tại kèm context
-    user_msg = f"""Câu hỏi: {message}
+    city_rule = (
+        f"Người dùng đang hỏi về thành phố: {intent['city']}. "
+        "Chỉ dùng địa điểm có thành phố/địa chỉ khớp thành phố này."
+        if intent.get("city")
+        else "Người dùng chưa nêu thành phố cụ thể."
+    )
+
+    user_prompt = f"""Câu hỏi của người dùng: {message}
+
+{city_rule}
 
 {context}
 
-Hãy trả lời dựa vào thông tin trên. Nếu không liên quan đến địa điểm, 
-trả lời bình thường như trợ lý du lịch."""
+Hãy trả lời chỉ dựa trên DỮ LIỆU ĐỊA ĐIỂM ở trên. Nếu cần liệt kê, ưu tiên 3-5 địa điểm phù hợp nhất."""
 
-    messages.append(HumanMessage(content=user_msg))
+    messages.append(HumanMessage(content=user_prompt))
 
-    # 5. Gọi LLM
-    logger.info(f"Calling Ollama model: {OLLAMA_MODEL}")
+    logger.info("Calling Ollama model: %s", OLLAMA_MODEL)
     response = llm.invoke(messages)
-    answer = response.content.strip()
 
     return {
-        "answer": answer,
-        "places": merged[:5],
-        "sources_used": len(merged)
+        "answer": response.content.strip(),
+        "places": places[:5],
+        "sources_used": len(places),
     }
