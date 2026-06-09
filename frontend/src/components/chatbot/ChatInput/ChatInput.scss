@@ -52,6 +52,11 @@
 
         font-size: 16px;
         font-family: inherit;
+
+        &:disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
     }
 
     button {
@@ -75,6 +80,11 @@
 
         &:hover {
             background: #f3f4f6;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
     }
 }

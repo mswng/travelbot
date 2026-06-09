@@ -1,5 +1,6 @@
 .chat-sidebar {
     width: 290px;
+    height: 100%;
 
     background: white;
 
@@ -9,7 +10,9 @@
 
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 18px;
+
+    overflow: hidden;
 }
 
 .new-chat-btn {
@@ -32,7 +35,7 @@
 
     cursor: pointer;
 
-    margin-bottom: 32px;
+    margin-bottom: 6px;
 
     transition: 0.25s ease;
 
@@ -41,11 +44,12 @@
     }
 }
 
-.sidebar-section,
 .history-section {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .sidebar-title {
@@ -59,9 +63,8 @@
     margin-bottom: 8px;
 }
 
-.sidebar-section button,
 .history-section button {
-    height: 48px;
+    min-height: 48px;
 
     border: none;
     border-radius: 14px;
@@ -86,6 +89,28 @@
     &:hover {
         background: #f3f4f6;
     }
+
+    &.active {
+        background: #ecfdf5;
+        color: #047857;
+        font-weight: 700;
+    }
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.sidebar-empty {
+    margin: 0;
+    padding: 0 6px;
+
+    color: #6b7280;
+
+    font-size: 14px;
+    line-height: 22px;
 }
 
 @media (max-width: 992px) {

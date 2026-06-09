@@ -61,11 +61,18 @@
     align-items: center;
     gap: 14px;
 
-    img {
+    .admin-avatar-icon {
         width: 48px;
         height: 48px;
 
         border-radius: 50%;
+
+        background: #ecfdf5;
+        color: #047857;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     span {

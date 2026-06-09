@@ -17,6 +17,7 @@ import { getCategoryLabel } from "../CategoryTabs/CategoryTabs.jsx";
 import DestinationCard from "../DestinationCard/DestinationCard.jsx";
 
 const ITEMS_PER_PAGE = 8;
+const FETCH_SIZE = 40;
 const fallbackImage =
     "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200";
 
@@ -33,6 +34,8 @@ const cityNameMap = {
     "ho chi minh": "TP. Hồ Chí Minh",
     "ho chi minh city": "TP. Hồ Chí Minh",
     hcm: "TP. Hồ Chí Minh",
+    "sai gon": "TP. Hồ Chí Minh",
+    saigon: "TP. Hồ Chí Minh",
     hue: "Huế",
     "nha trang": "Nha Trang",
     "phu quoc": "Phú Quốc",
@@ -42,13 +45,32 @@ const cityNameMap = {
     "vung tau": "Vũng Tàu",
 };
 
+const cityAliases = {
+    "Đà Nẵng": ["da nang", "danang"],
+    "Nha Trang": ["nha trang", "nhatrang"],
+    "Hà Nội": ["ha noi", "hanoi"],
+    "TP. Hồ Chí Minh": ["ho chi minh", "ho chi minh city", "hcm", "sai gon", "saigon"],
+    "Đà Lạt": ["da lat", "dalat"],
+    "Phú Quốc": ["phu quoc", "phuquoc"],
+    "Huế": ["hue"],
+    "Hạ Long": ["ha long", "halong"],
+    "Vũng Tàu": ["vung tau", "vungtau"],
+    "Cần Thơ": ["can tho"],
+    "Hải Phòng": ["hai phong", "haiphong"],
+    "Quy Nhơn": ["quy nhon", "quynhon"],
+    "Sa Pa": ["sa pa", "sapa"],
+};
+
 const normalizeText = (value = "") =>
     String(value)
         .trim()
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[_-]+/g, " ");
+        .replace(/[_-]+/g, " ")
+        .replace(/[^\w\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
 const formatCityName = (city = "") => {
     const raw = String(city || "").trim();
@@ -61,6 +83,29 @@ const formatCityName = (city = "") => {
         .replace(/[_-]+/g, " ")
         .replace(/\s+/g, " ")
         .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getCityTokens = (city = "") => {
+    const formatted = formatCityName(city);
+    const aliasList = cityAliases[formatted] || [];
+
+    return [
+        normalizeText(city),
+        normalizeText(formatted),
+        ...aliasList.map(normalizeText),
+    ].filter(Boolean);
+};
+
+const placeMatchesCity = (place, city) => {
+    const tokens = getCityTokens(city);
+    const placeCity = normalizeText(place.city);
+    const address = normalizeText(place.address);
+
+    return tokens.some((token) =>
+        placeCity === token ||
+        placeCity.includes(token) ||
+        address.includes(token)
+    );
 };
 
 const getPlaceImage = (place) =>
@@ -134,12 +179,14 @@ function DestinationSection({
                 const data = await getPublicPlaces({
                     city: selectedCity,
                     page: cityPage - 1,
-                    size: ITEMS_PER_PAGE,
+                    size: FETCH_SIZE,
                     sortBy: "rating",
                     sortDir: "desc",
                 });
+                const filteredPlaces = unwrapPageContent(data)
+                    .filter((place) => placeMatchesCity(place, selectedCity));
 
-                setCityPlaces(unwrapPageContent(data));
+                setCityPlaces(filteredPlaces.slice(0, ITEMS_PER_PAGE));
                 setCityTotalPages(Math.max(1, getPageMeta(data).totalPages));
             } catch {
                 setCityPlaces([]);

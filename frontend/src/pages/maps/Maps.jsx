@@ -117,6 +117,10 @@ const normalizePlace = (place) => {
     };
 };
 
+const placeHasCoordinates = (place) =>
+    toNumber(place?.latitude) !== null &&
+    toNumber(place?.longitude) !== null;
+
 const withDistanceFrom = (location, places) =>
     places.map((place) => ({
         ...place,
@@ -274,7 +278,13 @@ export default function Maps() {
             const place = normalizePlace(data);
 
             if (!place) {
-                fetchPlaces();
+                setPlaces([]);
+                setSelectedId(null);
+                setError(
+                    data?.name
+                        ? `Địa điểm "${data.name}" chưa có tọa độ hợp lệ nên chưa thể hiển thị trên OpenStreetMap.`
+                        : "Địa điểm này chưa có tọa độ hợp lệ nên chưa thể hiển thị trên OpenStreetMap."
+                );
                 return;
             }
 

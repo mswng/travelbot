@@ -9,6 +9,11 @@ export const sendChatMessage = async ({ message, sessionId }) => {
     return unwrapApi(res);
 };
 
+export const getChatSessions = async () => {
+    const res = await axiosClient.get("/chatbot/sessions");
+    return unwrapApi(res);
+};
+
 export const getChatHistory = async (sessionId) => {
     const res = await axiosClient.get(`/chatbot/history/${sessionId}`);
     return unwrapApi(res);

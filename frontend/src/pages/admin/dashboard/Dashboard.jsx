@@ -12,158 +12,136 @@ import UserTable
 from "~/components/dashborad/UserTable/UserTable";
 
 import {
-    Users,
     MapPinned,
-    FileText,
+    Users,
 } from "lucide-react";
 
 import {
     getDashboard,
+    getUsers,
 } from "~/services/adminService";
+import { unwrapPageContent } from "~/services/apiUtils";
+
+const DASHBOARD_REFRESH_MS = 15000;
 
 function Dashboard() {
-
-    /* STATE */
-
-    const [dashboardData, setDashboardData] =
-        useState(null);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    /* FETCH */
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        fetchDashboard({ showLoading: true });
 
-        fetchDashboard();
+        const intervalId = window.setInterval(() => {
+            fetchDashboard();
+        }, DASHBOARD_REFRESH_MS);
 
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                fetchDashboard();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, []);
 
-    const fetchDashboard = async () => {
+    const fetchRecentUsersFallback = async (totalUsers = 0) => {
+        if (totalUsers <= 0) return [];
 
         try {
-
-            setLoading(true);
-
-            const data =
-                await getDashboard();
-
-            console.log(data);
-
-            setDashboardData(data);
-
-        } catch (err) {
-
-            console.log(err);
-
-        } finally {
-
-            setLoading(false);
+            const data = await getUsers(0, 10);
+            return unwrapPageContent(data);
+        } catch {
+            return [];
         }
     };
 
-    /* LOADING */
+    const fetchDashboard = async ({ showLoading = false } = {}) => {
+        try {
+            if (showLoading) {
+                setLoading(true);
+            }
+
+            const data = await getDashboard();
+            const recentUsers = Array.isArray(data?.recentUsers)
+                ? data.recentUsers
+                : [];
+            const resolvedRecentUsers = recentUsers.length > 0
+                ? recentUsers
+                : await fetchRecentUsersFallback(data?.totalUsers || 0);
+
+            setDashboardData({
+                ...data,
+                recentUsers: resolvedRecentUsers,
+            });
+        } catch (err) {
+            console.log(err);
+        } finally {
+            if (showLoading) {
+                setLoading(false);
+            }
+        }
+    };
 
     if (loading) {
-
         return (
-
             <div className="dashboard-loading">
-
-                Loading dashboard...
-
+                Đang tải dashboard...
             </div>
         );
     }
 
-    /* STATS */
-
     const stats = [
-
         {
             title: "Người dùng",
-
-            value:
-                dashboardData?.totalUsers || 0,
-
-            icon:
-                <Users size={28} />,
+            value: dashboardData?.totalUsers || 0,
+            icon: <Users size={28} />,
         },
-
         {
             title: "Địa điểm du lịch",
-
-            value:
-                dashboardData?.totalPlaces || 0,
-
-            icon:
-                <MapPinned size={28} />,
+            value: dashboardData?.totalPlaces || 0,
+            icon: <MapPinned size={28} />,
         },
     ];
 
     return (
-
         <div className="dashboard-page">
-
-            {/* HEADER */}
-
             <div className="dashboard-top">
-
                 <h1>
                     Trang quản trị
                 </h1>
 
                 <p>
-                    Chào mừng đến với trang quản trị của TravelBot!
-                    <br />
-
-                    Tại đây, bạn có thể theo dõi và quản lý tất cả
-                    các hoạt động trên nền tảng của chúng tôi.
-                    <br />
-
-                    Dưới đây là tổng quan về số liệu thống kê,
-                    người dùng và bài viết gần đây nhất.
+                    Theo dõi nhanh số lượng người dùng, địa điểm và những tài khoản mới đăng ký gần đây.
                 </p>
-
             </div>
 
-            {/* STATS */}
-
             <div className="stats-cards">
-
-                {stats.map((item, index) => (
-
+                {stats.map((item) => (
                     <StatsCard
-                        key={index}
+                        key={item.title}
                         icon={item.icon}
                         title={item.title}
                         value={item.value}
                     />
-
                 ))}
-
             </div>
 
-            {/* RECENT USERS */}
-
             <div className="dashboard-section">
-
                 <div className="section-header">
-
                     <h2>
-                        Người dùng gần đây
+                        Top 10 user mới đăng ký
                     </h2>
-
                 </div>
 
                 <UserTable
-                    users={
-                        dashboardData?.recentUsers || []
-                    }
+                    users={dashboardData?.recentUsers || []}
                 />
-
             </div>
-
         </div>
     );
 }

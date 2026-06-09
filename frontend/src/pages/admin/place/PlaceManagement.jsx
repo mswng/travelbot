@@ -13,6 +13,8 @@ from "~/components/admin/places/PlaceCard/PlaceCard.jsx";
 import PlaceModal
 from "~/components/admin/places/PlaceModal/PlaceModal.jsx";
 
+import Pagination from "~/components/pagination/pagination.jsx";
+
 import {
     createPlace,
     deletePlace,
@@ -21,43 +23,44 @@ import {
 } from "~/services/adminService";
 
 import {
+    getPageMeta,
     unwrapPageContent,
 } from "~/services/apiUtils";
 
+const PLACES_PER_PAGE = 30;
+
 export default function PlaceManagement() {
-
     const [places, setPlaces] = useState([]);
-
     const [loading, setLoading] = useState(true);
-
     const [error, setError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageMeta, setPageMeta] = useState({
+        totalElements: 0,
+        totalPages: 1,
+    });
+
+    const [openModal, setOpenModal] = useState(false);
+    const [editingPlace, setEditingPlace] = useState(null);
 
     useEffect(() => {
+        fetchPlaces(currentPage);
+    }, [currentPage]);
 
-        fetchPlaces();
-
-    }, []);
-
-    const fetchPlaces = async () => {
-
+    const fetchPlaces = async (page = currentPage) => {
         try {
-
             setLoading(true);
             setError("");
 
-            const data = await getPlaces(0, 10);
+            const data = await getPlaces(page - 1, PLACES_PER_PAGE);
 
             setPlaces(unwrapPageContent(data));
-
+            setPageMeta(getPageMeta(data));
         } catch (err) {
-
             setError(
                 err.response?.data?.message ||
                 "Không tải được danh sách địa điểm"
             );
-
         } finally {
-
             setLoading(false);
         }
     };
@@ -76,96 +79,79 @@ export default function PlaceManagement() {
         source: place.source || "admin",
     });
 
-    /* MODAL */
-
-    const [openModal, setOpenModal] = useState(false);
-
-    const [editingPlace, setEditingPlace] = useState(null);
-
-    /* ADD */
-
-    const handleAdd = async (newPlace) => {
-
-        await createPlace(toPlaceRequest(newPlace));
-
-        fetchPlaces();
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
     };
 
-    /* DELETE */
+    const handleAdd = async (newPlace) => {
+        await createPlace(toPlaceRequest(newPlace));
+
+        if (currentPage === 1) {
+            fetchPlaces(1);
+        } else {
+            setCurrentPage(1);
+        }
+    };
 
     const handleDelete = async (id) => {
-
         const confirmDelete = window.confirm(
-            "Delete this place?"
+            "Bạn có chắc muốn xóa địa điểm này?"
         );
 
         if (!confirmDelete) return;
 
         await deletePlace(id);
 
-        fetchPlaces();
+        if (places.length === 1 && currentPage > 1) {
+            setCurrentPage((prev) => prev - 1);
+        } else {
+            fetchPlaces(currentPage);
+        }
     };
 
-    /* EDIT */
-
     const handleEdit = (place) => {
-
         setEditingPlace(place);
-
         setOpenModal(true);
     };
 
-    /* UPDATE */
-
     const handleUpdate = async (updatedPlace) => {
-
         await updatePlace(
             updatedPlace.id,
             toPlaceRequest(updatedPlace)
         );
 
-        fetchPlaces();
+        fetchPlaces(currentPage);
     };
 
     return (
-
         <div className="place-page">
-
-            {/* TOP */}
-
             <div className="place-top">
-
                 <div>
-
                     <h1>
                         Quản lý địa điểm
                     </h1>
 
                     <p>
-                        Quản lý các điểm đến và địa điểm du lịch.
+                        Đang có {pageMeta.totalElements || 0} địa điểm, mỗi trang hiển thị {PLACES_PER_PAGE} địa điểm.
                     </p>
-
                 </div>
 
                 <button
                     className="add-place-btn"
+                    type="button"
                     onClick={() => {
-
                         setEditingPlace(null);
-
                         setOpenModal(true);
                     }}
                 >
-
                     <Plus size={18} />
-
                     Thêm địa điểm
-
                 </button>
-
             </div>
-
-            {/* GRID */}
 
             {loading && (
                 <p>Đang tải địa điểm...</p>
@@ -175,22 +161,26 @@ export default function PlaceManagement() {
                 <p>{error}</p>
             )}
 
-            <div className="place-grid">
+            {!loading && !error && (
+                <>
+                    <div className="place-grid">
+                        {places.map((place) => (
+                            <PlaceCard
+                                key={place.id}
+                                place={place}
+                                onDelete={handleDelete}
+                                onEdit={handleEdit}
+                            />
+                        ))}
+                    </div>
 
-                {places.map((place) => (
-
-                    <PlaceCard
-                        key={place.id}
-                        place={place}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={pageMeta.totalPages || 1}
+                        onPageChange={handlePageChange}
                     />
-
-                ))}
-
-            </div>
-
-            {/* MODAL */}
+                </>
+            )}
 
             <PlaceModal
                 open={openModal}
@@ -199,7 +189,6 @@ export default function PlaceManagement() {
                 onUpdate={handleUpdate}
                 editingPlace={editingPlace}
             />
-
         </div>
     );
 }
